@@ -27,7 +27,7 @@
 #define CCO_H
 
 #if !defined(_WIN32) && !defined(_POSIX_C_SOURCE)
-#  define _POSIX_C_SOURCE 200809L
+#define _POSIX_C_SOURCE 200809L
 #endif
 
 #include <stdbool.h>
@@ -107,15 +107,15 @@ void cco_target_standard(Cco_Target *t, const char *standard);
 Cco_Str_Array cco_glob(const char *pattern);
 
 const char *cco_header_file_path(void);
-int cco_go_rebuild_urself(int argc, char **argv, const char *source_path, const char *header_path);
+int cco_go_rebuild_urself(int argc, char **argv, const char *source_path,
+                          const char *header_path);
 
 #ifndef CCO_HEADER_FILE
-#  define CCO_HEADER_FILE cco_header_file_path()
+#define CCO_HEADER_FILE cco_header_file_path()
 #endif
 
-#define CCO_GO_REBUILD_URSELF(argc, argv) \
+#define CCO_GO_REBUILD_URSELF(argc, argv)                                      \
     cco_go_rebuild_urself((argc), (argv), __FILE__, CCO_HEADER_FILE)
-
 
 #ifdef CCO_IMPLEMENTATION
 
@@ -129,27 +129,27 @@ int cco_go_rebuild_urself(int argc, char **argv, const char *source_path, const 
 #include <sys/types.h>
 
 #ifdef _WIN32
-#  include <direct.h>
-#  include <io.h>
-#  include <process.h>
-#  include <windows.h>
-#  define CCO_MKDIR(path) _mkdir(path)
-#  define CCO_RMDIR(path) _rmdir(path)
-#  define CCO_UNLINK(path) _unlink(path)
-#  define CCO_GETCWD(buf, size) _getcwd((buf), (size))
-#  define CCO_CHDIR(path) _chdir(path)
+#include <direct.h>
+#include <io.h>
+#include <process.h>
+#include <windows.h>
+#define CCO_MKDIR(path) _mkdir(path)
+#define CCO_RMDIR(path) _rmdir(path)
+#define CCO_UNLINK(path) _unlink(path)
+#define CCO_GETCWD(buf, size) _getcwd((buf), (size))
+#define CCO_CHDIR(path) _chdir(path)
 #else
-#  include <dirent.h>
-#  include <sys/wait.h>
-#  include <unistd.h>
-#  if defined(__APPLE__)
-#    include <mach-o/dyld.h>
-#  endif
-#  define CCO_MKDIR(path) mkdir((path), 0777)
-#  define CCO_RMDIR(path) rmdir(path)
-#  define CCO_UNLINK(path) unlink(path)
-#  define CCO_GETCWD(buf, size) getcwd((buf), (size))
-#  define CCO_CHDIR(path) chdir(path)
+#include <dirent.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#if defined(__APPLE__)
+#include <mach-o/dyld.h>
+#endif
+#define CCO_MKDIR(path) mkdir((path), 0777)
+#define CCO_RMDIR(path) rmdir(path)
+#define CCO_UNLINK(path) unlink(path)
+#define CCO_GETCWD(buf, size) getcwd((buf), (size))
+#define CCO_CHDIR(path) chdir(path)
 #endif
 
 static void cco_oom(void) {
@@ -159,18 +159,21 @@ static void cco_oom(void) {
 
 static void *cco_xmalloc(size_t size) {
     void *p = malloc(size ? size : 1);
-    if (!p) cco_oom();
+    if (!p)
+        cco_oom();
     return p;
 }
 
 static void *cco_xrealloc(void *ptr, size_t size) {
     void *p = realloc(ptr, size ? size : 1);
-    if (!p) cco_oom();
+    if (!p)
+        cco_oom();
     return p;
 }
 
 static char *cco_xstrdup(const char *s) {
-    if (!s) s = "";
+    if (!s)
+        s = "";
     size_t n = strlen(s);
     char *p = (char *)cco_xmalloc(n + 1);
     memcpy(p, s, n + 1);
@@ -185,9 +188,11 @@ static char *cco_xstrndup(const char *s, size_t n) {
 }
 
 static void cco_str_array_reserve(Cco_Str_Array *a, size_t need) {
-    if (a->capacity >= need) return;
+    if (a->capacity >= need)
+        return;
     size_t cap = a->capacity ? a->capacity : 8;
-    while (cap < need) cap *= 2;
+    while (cap < need)
+        cap *= 2;
     a->items = (char **)cco_xrealloc(a->items, cap * sizeof(char *));
     a->capacity = cap;
 }
@@ -204,13 +209,15 @@ static void cco_str_array_push_owned(Cco_Str_Array *a, char *value) {
 
 static bool cco_str_array_contains(const Cco_Str_Array *a, const char *value) {
     for (size_t i = 0; i < a->count; ++i) {
-        if (strcmp(a->items[i], value) == 0) return true;
+        if (strcmp(a->items[i], value) == 0)
+            return true;
     }
     return false;
 }
 
 static void cco_str_array_free(Cco_Str_Array *a) {
-    for (size_t i = 0; i < a->count; ++i) free(a->items[i]);
+    for (size_t i = 0; i < a->count; ++i)
+        free(a->items[i]);
     free(a->items);
     a->items = NULL;
     a->count = 0;
@@ -220,7 +227,8 @@ static void cco_str_array_free(Cco_Str_Array *a) {
 void cco_target_array_push(Cco_Target_Array *a, Cco_Target *value) {
     if (a->capacity < a->count + 1) {
         size_t cap = a->capacity ? a->capacity * 2 : 8;
-        a->items = (Cco_Target **)cco_xrealloc(a->items, cap * sizeof(Cco_Target *));
+        a->items =
+            (Cco_Target **)cco_xrealloc(a->items, cap * sizeof(Cco_Target *));
         a->capacity = cap;
     }
     a->items[a->count++] = value;
@@ -240,9 +248,11 @@ typedef struct {
 } Cco_SB;
 
 static void cco_sb_reserve(Cco_SB *sb, size_t need) {
-    if (sb->capacity >= need) return;
+    if (sb->capacity >= need)
+        return;
     size_t cap = sb->capacity ? sb->capacity : 128;
-    while (cap < need) cap *= 2;
+    while (cap < need)
+        cap *= 2;
     sb->data = (char *)cco_xrealloc(sb->data, cap);
     sb->capacity = cap;
 }
@@ -265,7 +275,8 @@ static void cco_sb_append_ch(Cco_SB *sb, char c) {
 }
 
 static const char *cco_sb_cstr(Cco_SB *sb) {
-    if (!sb->data) cco_sb_reserve(sb, 1);
+    if (!sb->data)
+        cco_sb_reserve(sb, 1);
     sb->data[sb->len] = '\0';
     return sb->data;
 }
@@ -278,28 +289,38 @@ static void cco_sb_free(Cco_SB *sb) {
 }
 
 static bool cco_path_is_absolute(const char *p) {
-    if (!p || !*p) return false;
-    if (p[0] == '/' || p[0] == '\\') return true;
+    if (!p || !*p)
+        return false;
+    if (p[0] == '/' || p[0] == '\\')
+        return true;
 #ifdef _WIN32
-    if (isalpha((unsigned char)p[0]) && p[1] == ':' && (p[2] == '/' || p[2] == '\\')) return true;
+    if (isalpha((unsigned char)p[0]) && p[1] == ':' &&
+        (p[2] == '/' || p[2] == '\\'))
+        return true;
 #endif
     return false;
 }
 
 static char *cco_path_normalize(const char *path) {
-    if (!path || !*path) return cco_xstrdup(".");
+    if (!path || !*path)
+        return cco_xstrdup(".");
     bool absolute = cco_path_is_absolute(path);
     Cco_Str_Array parts = {0};
     const char *p = path;
     while (*p) {
-        while (*p == '/' || *p == '\\') ++p;
+        while (*p == '/' || *p == '\\')
+            ++p;
         const char *start = p;
-        while (*p && *p != '/' && *p != '\\') ++p;
+        while (*p && *p != '/' && *p != '\\')
+            ++p;
         size_t n = (size_t)(p - start);
-        if (n == 0) continue;
-        if (n == 1 && start[0] == '.') continue;
+        if (n == 0)
+            continue;
+        if (n == 1 && start[0] == '.')
+            continue;
         if (n == 2 && start[0] == '.' && start[1] == '.') {
-            if (parts.count > 0 && strcmp(parts.items[parts.count - 1], "..") != 0) {
+            if (parts.count > 0 &&
+                strcmp(parts.items[parts.count - 1], "..") != 0) {
                 free(parts.items[--parts.count]);
             } else if (!absolute) {
                 cco_str_array_push(&parts, "..");
@@ -311,12 +332,15 @@ static char *cco_path_normalize(const char *path) {
     }
 
     Cco_SB sb = {0};
-    if (absolute) cco_sb_append_ch(&sb, '/');
+    if (absolute)
+        cco_sb_append_ch(&sb, '/');
     for (size_t i = 0; i < parts.count; ++i) {
-        if (i) cco_sb_append_ch(&sb, '/');
+        if (i)
+            cco_sb_append_ch(&sb, '/');
         cco_sb_append(&sb, parts.items[i]);
     }
-    if (sb.len == 0) cco_sb_append(&sb, absolute ? "" : ".");
+    if (sb.len == 0)
+        cco_sb_append(&sb, absolute ? "" : ".");
     char *out = cco_xstrdup(cco_sb_cstr(&sb));
     cco_sb_free(&sb);
     cco_str_array_free(&parts);
@@ -324,13 +348,17 @@ static char *cco_path_normalize(const char *path) {
 }
 
 static char *cco_path_join(const char *a, const char *b) {
-    if (!a || !*a) return cco_xstrdup(b ? b : "");
-    if (!b || !*b) return cco_xstrdup(a);
-    if (cco_path_is_absolute(b)) return cco_xstrdup(b);
+    if (!a || !*a)
+        return cco_xstrdup(b ? b : "");
+    if (!b || !*b)
+        return cco_xstrdup(a);
+    if (cco_path_is_absolute(b))
+        return cco_xstrdup(b);
     Cco_SB sb = {0};
     cco_sb_append(&sb, a);
     size_t n = sb.len;
-    if (n > 0 && sb.data[n - 1] != '/' && sb.data[n - 1] != '\\') cco_sb_append_ch(&sb, '/');
+    if (n > 0 && sb.data[n - 1] != '/' && sb.data[n - 1] != '\\')
+        cco_sb_append_ch(&sb, '/');
     cco_sb_append(&sb, b);
     char *out = cco_path_normalize(cco_sb_cstr(&sb));
     cco_sb_free(&sb);
@@ -338,9 +366,11 @@ static char *cco_path_join(const char *a, const char *b) {
 }
 
 static char *cco_path_absolute(const char *path) {
-    if (cco_path_is_absolute(path)) return cco_path_normalize(path);
+    if (cco_path_is_absolute(path))
+        return cco_path_normalize(path);
     char buf[4096];
-    if (!CCO_GETCWD(buf, sizeof(buf))) return cco_path_normalize(path);
+    if (!CCO_GETCWD(buf, sizeof(buf)))
+        return cco_path_normalize(path);
     return cco_path_join(buf, path);
 }
 
@@ -380,7 +410,8 @@ static char *cco_path_parent(const char *path) {
     char *slash = strrchr(norm, '/');
 #ifdef _WIN32
     char *bslash = strrchr(norm, '\\');
-    if (!slash || (bslash && bslash > slash)) slash = bslash;
+    if (!slash || (bslash && bslash > slash))
+        slash = bslash;
 #endif
     if (!slash) {
         free(norm);
@@ -398,14 +429,16 @@ static const char *cco_path_basename(const char *path) {
     const char *slash = strrchr(path, '/');
 #ifdef _WIN32
     const char *bslash = strrchr(path, '\\');
-    if (!slash || (bslash && bslash > slash)) slash = bslash;
+    if (!slash || (bslash && bslash > slash))
+        slash = bslash;
 #endif
     return slash ? slash + 1 : path;
 }
 
 static bool cco_path_is_file(const char *path) {
     struct stat st;
-    if (stat(path, &st) != 0) return false;
+    if (stat(path, &st) != 0)
+        return false;
 #ifdef _WIN32
     return (st.st_mode & _S_IFREG) != 0;
 #else
@@ -415,7 +448,8 @@ static bool cco_path_is_file(const char *path) {
 
 static bool cco_path_is_dir(const char *path) {
     struct stat st;
-    if (stat(path, &st) != 0) return false;
+    if (stat(path, &st) != 0)
+        return false;
 #ifdef _WIN32
     return (st.st_mode & _S_IFDIR) != 0;
 #else
@@ -425,7 +459,8 @@ static bool cco_path_is_dir(const char *path) {
 
 static double cco_path_mtime(const char *path) {
     struct stat st;
-    if (stat(path, &st) != 0) return -1.0;
+    if (stat(path, &st) != 0)
+        return -1.0;
     return (double)st.st_mtime;
 }
 
@@ -454,32 +489,42 @@ static bool cco_path_mkdir_p(const char *path) {
 }
 
 static bool cco_path_remove_tree(const char *path) {
-    if (!cco_path_is_dir(path)) return CCO_UNLINK(path) == 0 || !cco_path_is_file(path);
+    if (!cco_path_is_dir(path))
+        return CCO_UNLINK(path) == 0 || !cco_path_is_file(path);
 #ifdef _WIN32
     char *pattern = cco_path_join(path, "*");
     WIN32_FIND_DATAA data;
     HANDLE h = FindFirstFileA(pattern, &data);
     free(pattern);
-    if (h == INVALID_HANDLE_VALUE) return false;
+    if (h == INVALID_HANDLE_VALUE)
+        return false;
     do {
-        if (strcmp(data.cFileName, ".") == 0 || strcmp(data.cFileName, "..") == 0) continue;
+        if (strcmp(data.cFileName, ".") == 0 ||
+            strcmp(data.cFileName, "..") == 0)
+            continue;
         char *child = cco_path_join(path, data.cFileName);
-        if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) cco_path_remove_tree(child);
-        else CCO_UNLINK(child);
+        if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            cco_path_remove_tree(child);
+        else
+            CCO_UNLINK(child);
         free(child);
     } while (FindNextFileA(h, &data));
     FindClose(h);
     return CCO_RMDIR(path) == 0;
 #else
     DIR *dir = opendir(path);
-    if (!dir) return false;
+    if (!dir)
+        return false;
     struct dirent *entry;
     while ((entry = readdir(dir)) != NULL) {
-        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) continue;
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+            continue;
         char *child = cco_path_join(path, entry->d_name);
         struct stat st;
-        if (stat(child, &st) == 0 && S_ISDIR(st.st_mode)) cco_path_remove_tree(child);
-        else CCO_UNLINK(child);
+        if (stat(child, &st) == 0 && S_ISDIR(st.st_mode))
+            cco_path_remove_tree(child);
+        else
+            CCO_UNLINK(child);
         free(child);
     }
     closedir(dir);
@@ -520,20 +565,27 @@ static bool cco_wildcard_match(const char *pattern, const char *text) {
             return false;
         }
     }
-    while (*pattern == '*') ++pattern;
+    while (*pattern == '*')
+        ++pattern;
     return *pattern == '\0';
 }
 
-static bool cco_match_components(char **pattern, size_t pcount, size_t pi, char **path,
-                                 size_t scount, size_t si) {
-    if (pi == pcount) return si == scount;
+static bool cco_match_components(char **pattern, size_t pcount, size_t pi,
+                                 char **path, size_t scount, size_t si) {
+    if (pi == pcount)
+        return si == scount;
     if (strcmp(pattern[pi], "**") == 0) {
-        if (cco_match_components(pattern, pcount, pi + 1, path, scount, si)) return true;
-        if (si < scount) return cco_match_components(pattern, pcount, pi, path, scount, si + 1);
+        if (cco_match_components(pattern, pcount, pi + 1, path, scount, si))
+            return true;
+        if (si < scount)
+            return cco_match_components(pattern, pcount, pi, path, scount,
+                                        si + 1);
         return false;
     }
-    if (si == scount) return false;
-    if (!cco_wildcard_match(pattern[pi], path[si])) return false;
+    if (si == scount)
+        return false;
+    if (!cco_wildcard_match(pattern[pi], path[si]))
+        return false;
     return cco_match_components(pattern, pcount, pi + 1, path, scount, si + 1);
 }
 
@@ -542,10 +594,11 @@ static bool cco_excluded_dir(const char *name) {
            strcmp(name, ".svn") == 0 || strcmp(name, ".cco") == 0;
 }
 
-static void cco_glob_walk(const char *dir, const char *rel, char **pat, size_t pcount,
-                          Cco_Str_Array *out
+static void cco_glob_walk(const char *dir, const char *rel, char **pat,
+                          size_t pcount, Cco_Str_Array *out
 #ifdef _WIN32
-                          , bool unused
+                          ,
+                          bool unused
 #endif
 ) {
 #ifdef _WIN32
@@ -554,23 +607,33 @@ static void cco_glob_walk(const char *dir, const char *rel, char **pat, size_t p
     WIN32_FIND_DATAA data;
     HANDLE h = FindFirstFileA(pattern, &data);
     free(pattern);
-    if (h == INVALID_HANDLE_VALUE) return;
+    if (h == INVALID_HANDLE_VALUE)
+        return;
     do {
-        if (strcmp(data.cFileName, ".") == 0 || strcmp(data.cFileName, "..") == 0) continue;
+        if (strcmp(data.cFileName, ".") == 0 ||
+            strcmp(data.cFileName, "..") == 0)
+            continue;
         char *child = cco_path_join(dir, data.cFileName);
-        char *child_rel = *rel ? cco_path_join(rel, data.cFileName) : cco_xstrdup(data.cFileName);
+        char *child_rel = *rel ? cco_path_join(rel, data.cFileName)
+                               : cco_xstrdup(data.cFileName);
         if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-            if (!cco_excluded_dir(data.cFileName)) cco_glob_walk(child, child_rel, pat, pcount, out, false);
+            if (!cco_excluded_dir(data.cFileName))
+                cco_glob_walk(child, child_rel, pat, pcount, out, false);
         } else {
             Cco_Str_Array parts = {0};
             const char *p = child_rel;
             while (*p) {
-                while (*p == '/' || *p == '\\') ++p;
+                while (*p == '/' || *p == '\\')
+                    ++p;
                 const char *start = p;
-                while (*p && *p != '/' && *p != '\\') ++p;
-                if (p > start) cco_str_array_push_owned(&parts, cco_xstrndup(start, (size_t)(p - start)));
+                while (*p && *p != '/' && *p != '\\')
+                    ++p;
+                if (p > start)
+                    cco_str_array_push_owned(
+                        &parts, cco_xstrndup(start, (size_t)(p - start)));
             }
-            if (cco_match_components(pat, pcount, 0, parts.items, parts.count, 0)) {
+            if (cco_match_components(pat, pcount, 0, parts.items, parts.count,
+                                     0)) {
                 cco_str_array_push(out, child_rel);
             }
             cco_str_array_free(&parts);
@@ -581,25 +644,34 @@ static void cco_glob_walk(const char *dir, const char *rel, char **pat, size_t p
     FindClose(h);
 #else
     DIR *d = opendir(dir);
-    if (!d) return;
+    if (!d)
+        return;
     struct dirent *entry;
     while ((entry = readdir(d)) != NULL) {
-        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) continue;
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+            continue;
         char *child = cco_path_join(dir, entry->d_name);
-        char *child_rel = *rel ? cco_path_join(rel, entry->d_name) : cco_xstrdup(entry->d_name);
+        char *child_rel = *rel ? cco_path_join(rel, entry->d_name)
+                               : cco_xstrdup(entry->d_name);
         struct stat st;
         if (stat(child, &st) == 0 && S_ISDIR(st.st_mode)) {
-            if (!cco_excluded_dir(entry->d_name)) cco_glob_walk(child, child_rel, pat, pcount, out);
+            if (!cco_excluded_dir(entry->d_name))
+                cco_glob_walk(child, child_rel, pat, pcount, out);
         } else if (cco_path_is_file(child)) {
             Cco_Str_Array parts = {0};
             const char *p = child_rel;
             while (*p) {
-                while (*p == '/' || *p == '\\') ++p;
+                while (*p == '/' || *p == '\\')
+                    ++p;
                 const char *start = p;
-                while (*p && *p != '/' && *p != '\\') ++p;
-                if (p > start) cco_str_array_push_owned(&parts, cco_xstrndup(start, (size_t)(p - start)));
+                while (*p && *p != '/' && *p != '\\')
+                    ++p;
+                if (p > start)
+                    cco_str_array_push_owned(
+                        &parts, cco_xstrndup(start, (size_t)(p - start)));
             }
-            if (cco_match_components(pat, pcount, 0, parts.items, parts.count, 0)) {
+            if (cco_match_components(pat, pcount, 0, parts.items, parts.count,
+                                     0)) {
                 cco_str_array_push(out, child_rel);
             }
             cco_str_array_free(&parts);
@@ -619,10 +691,12 @@ static int cco_cmp_str(const void *a, const void *b) {
 
 Cco_Str_Array cco_glob(const char *pattern) {
     Cco_Str_Array out = {0};
-    if (!pattern || !*pattern) return out;
+    if (!pattern || !*pattern)
+        return out;
     char *norm = cco_path_normalize(pattern);
     if (!strchr(norm, '*') && !strchr(norm, '?')) {
-        if (cco_path_is_file(norm)) cco_str_array_push(&out, norm);
+        if (cco_path_is_file(norm))
+            cco_str_array_push(&out, norm);
         free(norm);
         return out;
     }
@@ -630,14 +704,19 @@ Cco_Str_Array cco_glob(const char *pattern) {
     Cco_Str_Array pat = {0};
     const char *p = norm;
     while (*p) {
-        while (*p == '/' || *p == '\\') ++p;
+        while (*p == '/' || *p == '\\')
+            ++p;
         const char *start = p;
-        while (*p && *p != '/' && *p != '\\') ++p;
-        if (p > start) cco_str_array_push_owned(&pat, cco_xstrndup(start, (size_t)(p - start)));
+        while (*p && *p != '/' && *p != '\\')
+            ++p;
+        if (p > start)
+            cco_str_array_push_owned(&pat,
+                                     cco_xstrndup(start, (size_t)(p - start)));
     }
     cco_glob_walk(".", "", pat.items, pat.count, &out
 #ifdef _WIN32
-                  , false
+                  ,
+                  false
 #endif
     );
     qsort(out.items, out.count, sizeof(char *), cco_cmp_str);
@@ -647,22 +726,26 @@ Cco_Str_Array cco_glob(const char *pattern) {
 }
 
 static int cco_run_program(Cco_Str_Array *args, const char *cwd, bool echo) {
-    if (args->count == 0) return -1;
+    if (args->count == 0)
+        return -1;
     if (echo) {
         fflush(stdout);
         fflush(stderr);
         fprintf(stdout, ">");
-        for (size_t i = 0; i < args->count; ++i) fprintf(stdout, " %s", args->items[i]);
+        for (size_t i = 0; i < args->count; ++i)
+            fprintf(stdout, " %s", args->items[i]);
         fprintf(stdout, "\n");
         fflush(stdout);
     }
 #ifdef _WIN32
     Cco_SB cmd = {0};
     for (size_t i = 0; i < args->count; ++i) {
-        if (i) cco_sb_append_ch(&cmd, ' ');
+        if (i)
+            cco_sb_append_ch(&cmd, ' ');
         cco_sb_append_ch(&cmd, '"');
         for (const char *p = args->items[i]; *p; ++p) {
-            if (*p == '"') cco_sb_append_ch(&cmd, '\\');
+            if (*p == '"')
+                cco_sb_append_ch(&cmd, '\\');
             cco_sb_append_ch(&cmd, *p);
         }
         cco_sb_append_ch(&cmd, '"');
@@ -673,7 +756,8 @@ static int cco_run_program(Cco_Str_Array *args, const char *cwd, bool echo) {
     si.cb = sizeof(si);
     memset(&pi, 0, sizeof(pi));
     char *cmdline = cco_xstrdup(cco_sb_cstr(&cmd));
-    BOOL ok = CreateProcessA(NULL, cmdline, NULL, NULL, TRUE, 0, NULL, cwd, &si, &pi);
+    BOOL ok =
+        CreateProcessA(NULL, cmdline, NULL, NULL, TRUE, 0, NULL, cwd, &si, &pi);
     cco_sb_free(&cmd);
     if (!ok) {
         free(cmdline);
@@ -689,7 +773,8 @@ static int cco_run_program(Cco_Str_Array *args, const char *cwd, bool echo) {
     return (int)code;
 #else
     char **argv = (char **)cco_xmalloc((args->count + 1) * sizeof(char *));
-    for (size_t i = 0; i < args->count; ++i) argv[i] = args->items[i];
+    for (size_t i = 0; i < args->count; ++i)
+        argv[i] = args->items[i];
     argv[args->count] = NULL;
     pid_t pid = fork();
     if (pid < 0) {
@@ -698,7 +783,8 @@ static int cco_run_program(Cco_Str_Array *args, const char *cwd, bool echo) {
         return -1;
     }
     if (pid == 0) {
-        if (cwd && *cwd && CCO_CHDIR(cwd) != 0) _exit(127);
+        if (cwd && *cwd && CCO_CHDIR(cwd) != 0)
+            _exit(127);
         execvp(argv[0], argv);
         _exit(127);
     }
@@ -710,7 +796,8 @@ static int cco_run_program(Cco_Str_Array *args, const char *cwd, bool echo) {
         }
     }
     free(argv);
-    if (WIFEXITED(status)) return WEXITSTATUS(status);
+    if (WIFEXITED(status))
+        return WEXITSTATUS(status);
     return -1;
 #endif
 }
@@ -720,15 +807,17 @@ const char *cco_header_file_path(void) { return __FILE__; }
 static char *cco_safe_component(const char *name) {
     char *out = cco_xstrdup(name && *name ? name : "target");
     for (char *p = out; *p; ++p) {
-        if (*p == '/' || *p == '\\' || *p == ':' || *p == '*' || *p == '?' || *p == '"' ||
-            *p == '<' || *p == '>' || *p == '|') {
+        if (*p == '/' || *p == '\\' || *p == ':' || *p == '*' || *p == '?' ||
+            *p == '"' || *p == '<' || *p == '>' || *p == '|') {
             *p = '_';
         }
     }
     return out;
 }
 
-static char *cco_obj_ext(const Cco_Workspace *ws) { return cco_xstrdup(ws->msvc ? ".obj" : ".o"); }
+static char *cco_obj_ext(const Cco_Workspace *ws) {
+    return cco_xstrdup(ws->msvc ? ".obj" : ".o");
+}
 
 static char *cco_exe_ext(const Cco_Workspace *ws) {
 #ifdef _WIN32
@@ -754,13 +843,16 @@ static char *cco_shared_ext(const Cco_Workspace *ws) {
 }
 
 static char *cco_build_base(const Cco_Workspace *ws) {
-    if (!ws->build_root || !*ws->build_root) return cco_xstrdup(ws->root);
+    if (!ws->build_root || !*ws->build_root)
+        return cco_xstrdup(ws->root);
     return cco_path_absolute(ws->build_root);
 }
 
-static char *cco_object_path(const Cco_Workspace *ws, const Cco_Target *t, const char *src) {
+static char *cco_object_path(const Cco_Workspace *ws, const Cco_Target *t,
+                             const char *src) {
     char *base = cco_build_base(ws);
-    char *obj_dir = cco_path_join(base, ws->build_root && *ws->build_root ? "obj" : "obj");
+    char *obj_dir =
+        cco_path_join(base, ws->build_root && *ws->build_root ? "obj" : "obj");
     char *safe = cco_safe_component(t->name);
     char *target_dir = cco_path_join(obj_dir, safe);
     char *rel = cco_path_relative(ws->root, src);
@@ -784,7 +876,8 @@ static char *cco_object_path(const Cco_Workspace *ws, const Cco_Target *t, const
 }
 
 static char *cco_target_output(const Cco_Workspace *ws, const Cco_Target *t) {
-    if (t->output && *t->output) return cco_path_absolute(t->output);
+    if (t->output && *t->output)
+        return cco_path_absolute(t->output);
     char *base = cco_build_base(ws);
     char *bin = cco_path_join(base, "bin");
     char *safe = cco_safe_component(t->name);
@@ -803,8 +896,10 @@ static char *cco_target_output(const Cco_Workspace *ws, const Cco_Target *t) {
     return out;
 }
 
-static char *cco_shared_output_path(const Cco_Workspace *ws, const Cco_Target *t) {
-    if (t->output && *t->output) return cco_path_absolute(t->output);
+static char *cco_shared_output_path(const Cco_Workspace *ws,
+                                    const Cco_Target *t) {
+    if (t->output && *t->output)
+        return cco_path_absolute(t->output);
     char *base = cco_build_base(ws);
     char *bin = cco_path_join(base, "bin");
     char *safe = cco_safe_component(t->name);
@@ -824,7 +919,8 @@ static char *cco_shared_output_path(const Cco_Workspace *ws, const Cco_Target *t
     return out;
 }
 
-static Cco_Target *cco_target_new(Cco_Workspace *ws, const char *name, Cco_Target_Kind kind) {
+static Cco_Target *cco_target_new(Cco_Workspace *ws, const char *name,
+                                  Cco_Target_Kind kind) {
     Cco_Target *t = (Cco_Target *)cco_xmalloc(sizeof(*t));
     memset(t, 0, sizeof(*t));
     t->name = cco_xstrdup(name);
@@ -835,7 +931,8 @@ static Cco_Target *cco_target_new(Cco_Workspace *ws, const char *name, Cco_Targe
 }
 
 static void cco_target_free(Cco_Target *t) {
-    if (!t) return;
+    if (!t)
+        return;
     free(t->name);
     free(t->output);
     free(t->standard);
@@ -853,8 +950,10 @@ void cco_workspace_init(Cco_Workspace *ws, int argc, char **argv) {
     ws->argc = argc;
     ws->argv = argv;
     char buf[4096];
-    if (CCO_GETCWD(buf, sizeof(buf))) ws->root = cco_path_normalize(buf);
-    else ws->root = cco_xstrdup(".");
+    if (CCO_GETCWD(buf, sizeof(buf)))
+        ws->root = cco_path_normalize(buf);
+    else
+        ws->root = cco_xstrdup(".");
 #ifdef _MSC_VER
     ws->cc = cco_xstrdup("cl");
     ws->msvc = 1;
@@ -870,7 +969,8 @@ void cco_workspace_init(Cco_Workspace *ws, int argc, char **argv) {
 }
 
 void cco_workspace_free(Cco_Workspace *ws) {
-    for (size_t i = 0; i < ws->targets.count; ++i) cco_target_free(ws->targets.items[i]);
+    for (size_t i = 0; i < ws->targets.count; ++i)
+        cco_target_free(ws->targets.items[i]);
     cco_target_array_free(&ws->targets);
     free(ws->root);
     free(ws->build_root);
@@ -902,12 +1002,24 @@ Cco_Target *cco_test(Cco_Workspace *ws, const char *name) {
     return cco_target_new(ws, name, CCO_TEST);
 }
 
-void cco_target_add_source(Cco_Target *t, const char *path) { cco_str_array_push(&t->sources, path); }
-void cco_target_add_include(Cco_Target *t, const char *dir) { cco_str_array_push(&t->includes, dir); }
-void cco_target_add_define(Cco_Target *t, const char *define) { cco_str_array_push(&t->defines, define); }
-void cco_target_add_cflag(Cco_Target *t, const char *flag) { cco_str_array_push(&t->cflags, flag); }
-void cco_target_add_linkflag(Cco_Target *t, const char *flag) { cco_str_array_push(&t->linkflags, flag); }
-void cco_target_link(Cco_Target *t, Cco_Target *dep) { cco_target_array_push(&t->links, dep); }
+void cco_target_add_source(Cco_Target *t, const char *path) {
+    cco_str_array_push(&t->sources, path);
+}
+void cco_target_add_include(Cco_Target *t, const char *dir) {
+    cco_str_array_push(&t->includes, dir);
+}
+void cco_target_add_define(Cco_Target *t, const char *define) {
+    cco_str_array_push(&t->defines, define);
+}
+void cco_target_add_cflag(Cco_Target *t, const char *flag) {
+    cco_str_array_push(&t->cflags, flag);
+}
+void cco_target_add_linkflag(Cco_Target *t, const char *flag) {
+    cco_str_array_push(&t->linkflags, flag);
+}
+void cco_target_link(Cco_Target *t, Cco_Target *dep) {
+    cco_target_array_push(&t->links, dep);
+}
 void cco_target_output_to(Cco_Target *t, const char *path) {
     free(t->output);
     t->output = cco_xstrdup(path);
@@ -959,7 +1071,9 @@ typedef struct {
     size_t buflen;
 } Cco_Sha256;
 
-static uint32_t cco_rotr(uint32_t x, uint32_t n) { return (x >> n) | (x << (32 - n)); }
+static uint32_t cco_rotr(uint32_t x, uint32_t n) {
+    return (x >> n) | (x << (32 - n));
+}
 
 static void cco_sha_init(Cco_Sha256 *s) {
     s->state[0] = 0x6a09e667u;
@@ -976,25 +1090,30 @@ static void cco_sha_init(Cco_Sha256 *s) {
 
 static void cco_sha_transform(Cco_Sha256 *s, const unsigned char *chunk) {
     static const uint32_t k[64] = {
-        0x428a2f98u, 0x71374491u, 0xb5c0fbcfu, 0xe9b5dba5u, 0x3956c25bu, 0x59f111f1u,
-        0x923f82a4u, 0xab1c5ed5u, 0xd807aa98u, 0x12835b01u, 0x243185beu, 0x550c7dc3u,
-        0x72be5d74u, 0x80deb1feu, 0x9bdc06a7u, 0xc19bf174u, 0xe49b69c1u, 0xefbe4786u,
-        0x0fc19dc6u, 0x240ca1ccu, 0x2de92c6fu, 0x4a7484aau, 0x5cb0a9dcu, 0x76f988dau,
-        0x983e5152u, 0xa831c66du, 0xb00327c8u, 0xbf597fc7u, 0xc6e00bf3u, 0xd5a79147u,
-        0x06ca6351u, 0x14292967u, 0x27b70a85u, 0x2e1b2138u, 0x4d2c6dfcu, 0x53380d13u,
-        0x650a7354u, 0x766a0abbu, 0x81c2c92eu, 0x92722c85u, 0xa2bfe8a1u, 0xa81a664bu,
-        0xc24b8b70u, 0xc76c51a3u, 0xd192e819u, 0xd6990624u, 0xf40e3585u, 0x106aa070u,
-        0x19a4c116u, 0x1e376c08u, 0x2748774cu, 0x34b0bcb5u, 0x391c0cb3u, 0x4ed8aa4au,
-        0x5b9cca4fu, 0x682e6ff3u, 0x748f82eeu, 0x78a5636fu, 0x84c87814u, 0x8cc70208u,
+        0x428a2f98u, 0x71374491u, 0xb5c0fbcfu, 0xe9b5dba5u, 0x3956c25bu,
+        0x59f111f1u, 0x923f82a4u, 0xab1c5ed5u, 0xd807aa98u, 0x12835b01u,
+        0x243185beu, 0x550c7dc3u, 0x72be5d74u, 0x80deb1feu, 0x9bdc06a7u,
+        0xc19bf174u, 0xe49b69c1u, 0xefbe4786u, 0x0fc19dc6u, 0x240ca1ccu,
+        0x2de92c6fu, 0x4a7484aau, 0x5cb0a9dcu, 0x76f988dau, 0x983e5152u,
+        0xa831c66du, 0xb00327c8u, 0xbf597fc7u, 0xc6e00bf3u, 0xd5a79147u,
+        0x06ca6351u, 0x14292967u, 0x27b70a85u, 0x2e1b2138u, 0x4d2c6dfcu,
+        0x53380d13u, 0x650a7354u, 0x766a0abbu, 0x81c2c92eu, 0x92722c85u,
+        0xa2bfe8a1u, 0xa81a664bu, 0xc24b8b70u, 0xc76c51a3u, 0xd192e819u,
+        0xd6990624u, 0xf40e3585u, 0x106aa070u, 0x19a4c116u, 0x1e376c08u,
+        0x2748774cu, 0x34b0bcb5u, 0x391c0cb3u, 0x4ed8aa4au, 0x5b9cca4fu,
+        0x682e6ff3u, 0x748f82eeu, 0x78a5636fu, 0x84c87814u, 0x8cc70208u,
         0x90befffau, 0xa4506cebu, 0xbef9a3f7u, 0xc67178f2u};
     uint32_t w[64];
     for (int i = 0; i < 16; ++i) {
-        w[i] = ((uint32_t)chunk[i * 4] << 24) | ((uint32_t)chunk[i * 4 + 1] << 16) |
+        w[i] = ((uint32_t)chunk[i * 4] << 24) |
+               ((uint32_t)chunk[i * 4 + 1] << 16) |
                ((uint32_t)chunk[i * 4 + 2] << 8) | (uint32_t)chunk[i * 4 + 3];
     }
     for (int i = 16; i < 64; ++i) {
-        uint32_t s0 = cco_rotr(w[i - 15], 7) ^ cco_rotr(w[i - 15], 18) ^ (w[i - 15] >> 3);
-        uint32_t s1 = cco_rotr(w[i - 2], 17) ^ cco_rotr(w[i - 2], 19) ^ (w[i - 2] >> 10);
+        uint32_t s0 =
+            cco_rotr(w[i - 15], 7) ^ cco_rotr(w[i - 15], 18) ^ (w[i - 15] >> 3);
+        uint32_t s1 =
+            cco_rotr(w[i - 2], 17) ^ cco_rotr(w[i - 2], 19) ^ (w[i - 2] >> 10);
         w[i] = w[i - 16] + s0 + w[i - 7] + s1;
     }
     uint32_t a = s->state[0], b = s->state[1], c = s->state[2], d = s->state[3];
@@ -1041,18 +1160,22 @@ static char *cco_sha_hex(Cco_Sha256 *s) {
     uint64_t bits = s->bitlen;
     s->buffer[s->buflen++] = 0x80;
     if (s->buflen > 56) {
-        while (s->buflen < 64) s->buffer[s->buflen++] = 0;
+        while (s->buflen < 64)
+            s->buffer[s->buflen++] = 0;
         cco_sha_transform(s, s->buffer);
         s->buflen = 0;
     }
-    while (s->buflen < 56) s->buffer[s->buflen++] = 0;
-    for (int i = 0; i < 8; ++i) s->buffer[56 + i] = (unsigned char)((bits >> (56 - i * 8)) & 0xff);
+    while (s->buflen < 56)
+        s->buffer[s->buflen++] = 0;
+    for (int i = 0; i < 8; ++i)
+        s->buffer[56 + i] = (unsigned char)((bits >> (56 - i * 8)) & 0xff);
     cco_sha_transform(s, s->buffer);
     char *out = (char *)cco_xmalloc(65);
     static const char digits[] = "0123456789abcdef";
     size_t pos = 0;
     for (int i = 0; i < 8; ++i) {
-        for (int shift = 28; shift >= 0; shift -= 4) out[pos++] = digits[(s->state[i] >> shift) & 0x0f];
+        for (int shift = 28; shift >= 0; shift -= 4)
+            out[pos++] = digits[(s->state[i] >> shift) & 0x0f];
     }
     out[pos] = '\0';
     return out;
@@ -1072,15 +1195,19 @@ static char *cco_hex_encode(const char *input) {
 }
 
 static int cco_hex_nibble(char c) {
-    if (c >= '0' && c <= '9') return c - '0';
-    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
-    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    if (c >= '0' && c <= '9')
+        return c - '0';
+    if (c >= 'a' && c <= 'f')
+        return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F')
+        return c - 'A' + 10;
     return -1;
 }
 
 static char *cco_hex_decode(const char *input) {
     size_t n = strlen(input);
-    if (n % 2 != 0) return cco_xstrdup("");
+    if (n % 2 != 0)
+        return cco_xstrdup("");
     char *out = (char *)cco_xmalloc(n / 2 + 1);
     for (size_t i = 0; i < n; i += 2) {
         int hi = cco_hex_nibble(input[i]);
@@ -1106,16 +1233,20 @@ static char *cco_make_fingerprint(const Cco_Str_Array *parts) {
     return cco_sha_hex(&s);
 }
 
-static bool cco_stat_file(const char *path, uintmax_t *size, int64_t *mtime_ns) {
+static bool cco_stat_file(const char *path, uintmax_t *size,
+                          int64_t *mtime_ns) {
     struct stat st;
-    if (stat(path, &st) != 0) return false;
+    if (stat(path, &st) != 0)
+        return false;
     *size = (uintmax_t)st.st_size;
 #if defined(_WIN32)
     *mtime_ns = (int64_t)st.st_mtime * 1000000000ll;
 #elif defined(__APPLE__)
-    *mtime_ns = (int64_t)st.st_mtimespec.tv_sec * 1000000000ll + (int64_t)st.st_mtimespec.tv_nsec;
+    *mtime_ns = (int64_t)st.st_mtimespec.tv_sec * 1000000000ll +
+                (int64_t)st.st_mtimespec.tv_nsec;
 #else
-    *mtime_ns = (int64_t)st.st_mtim.tv_sec * 1000000000ll + (int64_t)st.st_mtim.tv_nsec;
+    *mtime_ns =
+        (int64_t)st.st_mtim.tv_sec * 1000000000ll + (int64_t)st.st_mtim.tv_nsec;
 #endif
     return true;
 }
@@ -1129,17 +1260,20 @@ static char *cco_canonical_path(const char *path) {
 
 static Cco_FileRecord *cco_state_find_file(Cco_State *state, const char *path) {
     for (size_t i = 0; i < state->file_count; ++i) {
-        if (strcmp(state->files[i].path, path) == 0) return &state->files[i];
+        if (strcmp(state->files[i].path, path) == 0)
+            return &state->files[i];
     }
     return NULL;
 }
 
 static Cco_FileRecord *cco_state_add_file(Cco_State *state, const char *path) {
     Cco_FileRecord *existing = cco_state_find_file(state, path);
-    if (existing) return existing;
+    if (existing)
+        return existing;
     if (state->file_capacity < state->file_count + 1) {
         size_t cap = state->file_capacity ? state->file_capacity * 2 : 16;
-        state->files = (Cco_FileRecord *)cco_xrealloc(state->files, cap * sizeof(*state->files));
+        state->files = (Cco_FileRecord *)cco_xrealloc(
+            state->files, cap * sizeof(*state->files));
         state->file_capacity = cap;
     }
     Cco_FileRecord *rec = &state->files[state->file_count++];
@@ -1148,19 +1282,24 @@ static Cco_FileRecord *cco_state_add_file(Cco_State *state, const char *path) {
     return rec;
 }
 
-static Cco_ActionRecord *cco_state_find_action(Cco_State *state, const char *id) {
+static Cco_ActionRecord *cco_state_find_action(Cco_State *state,
+                                               const char *id) {
     for (size_t i = 0; i < state->action_count; ++i) {
-        if (strcmp(state->actions[i].id, id) == 0) return &state->actions[i];
+        if (strcmp(state->actions[i].id, id) == 0)
+            return &state->actions[i];
     }
     return NULL;
 }
 
-static Cco_ActionRecord *cco_state_add_action(Cco_State *state, const char *id) {
+static Cco_ActionRecord *cco_state_add_action(Cco_State *state,
+                                              const char *id) {
     Cco_ActionRecord *existing = cco_state_find_action(state, id);
-    if (existing) return existing;
+    if (existing)
+        return existing;
     if (state->action_capacity < state->action_count + 1) {
         size_t cap = state->action_capacity ? state->action_capacity * 2 : 16;
-        state->actions = (Cco_ActionRecord *)cco_xrealloc(state->actions, cap * sizeof(*state->actions));
+        state->actions = (Cco_ActionRecord *)cco_xrealloc(
+            state->actions, cap * sizeof(*state->actions));
         state->action_capacity = cap;
     }
     Cco_ActionRecord *rec = &state->actions[state->action_count++];
@@ -1192,7 +1331,8 @@ static bool cco_state_load(Cco_State *state, const char *path) {
     cco_state_clear(state);
     state->schema = 1;
     FILE *f = fopen(path, "rb");
-    if (!f) return false;
+    if (!f)
+        return false;
     char line[8192];
     Cco_ActionRecord *current = NULL;
     if (!fgets(line, sizeof(line), f) || strncmp(line, "CCOSTATE 1", 10) != 0) {
@@ -1202,27 +1342,34 @@ static bool cco_state_load(Cco_State *state, const char *path) {
     }
     while (fgets(line, sizeof(line), f)) {
         char *tag = strtok(line, " \t\r\n");
-        if (!tag) continue;
+        if (!tag)
+            continue;
         if (strcmp(tag, "T") == 0) {
             char *value = strtok(NULL, " \t\r\n");
-            if (value) { free(state->toolchain); state->toolchain = cco_hex_decode(value); }
+            if (value) {
+                free(state->toolchain);
+                state->toolchain = cco_hex_decode(value);
+            }
         } else if (strcmp(tag, "F") == 0) {
             char *size_s = strtok(NULL, " \t\r\n");
             char *mtime_s = strtok(NULL, " \t\r\n");
             char *hash = strtok(NULL, " \t\r\n");
             char *path_hex = strtok(NULL, " \t\r\n");
-            if (!size_s || !mtime_s || !hash || !path_hex) continue;
+            if (!size_s || !mtime_s || !hash || !path_hex)
+                continue;
             char *decoded = cco_hex_decode(path_hex);
             Cco_FileRecord *rec = cco_state_add_file(state, decoded);
             rec->size = (uintmax_t)strtoull(size_s, NULL, 10);
             rec->mtime_ns = (int64_t)strtoll(mtime_s, NULL, 10);
             free(rec->hash);
-            rec->hash = strcmp(hash, "-") == 0 ? cco_xstrdup("") : cco_xstrdup(hash);
+            rec->hash =
+                strcmp(hash, "-") == 0 ? cco_xstrdup("") : cco_xstrdup(hash);
             free(decoded);
         } else if (strcmp(tag, "A") == 0) {
             char *id_hex = strtok(NULL, " \t\r\n");
             char *fp = strtok(NULL, " \t\r\n");
-            if (!id_hex || !fp) continue;
+            if (!id_hex || !fp)
+                continue;
             char *id = cco_hex_decode(id_hex);
             current = cco_state_add_action(state, id);
             free(id);
@@ -1230,10 +1377,13 @@ static bool cco_state_load(Cco_State *state, const char *path) {
             current->fingerprint = cco_xstrdup(fp);
         } else if (strcmp(tag, "D") == 0 || strcmp(tag, "O") == 0) {
             char *path_hex = strtok(NULL, " \t\r\n");
-            if (!path_hex || !current) continue;
+            if (!path_hex || !current)
+                continue;
             char *decoded = cco_hex_decode(path_hex);
-            if (tag[0] == 'D') cco_str_array_push(&current->deps, decoded);
-            else cco_str_array_push(&current->outputs, decoded);
+            if (tag[0] == 'D')
+                cco_str_array_push(&current->deps, decoded);
+            else
+                cco_str_array_push(&current->outputs, decoded);
             free(decoded);
         }
     }
@@ -1242,26 +1392,36 @@ static bool cco_state_load(Cco_State *state, const char *path) {
 }
 
 static bool cco_state_save(const Cco_State *state, const char *path) {
-    if (!cco_ensure_parent(path)) return false;
+    if (!cco_ensure_parent(path))
+        return false;
     Cco_SB tmp = {0};
     cco_sb_append(&tmp, path);
     cco_sb_append(&tmp, ".tmp");
     FILE *f = fopen(cco_sb_cstr(&tmp), "wb");
-    if (!f) { cco_sb_free(&tmp); return false; }
+    if (!f) {
+        cco_sb_free(&tmp);
+        return false;
+    }
     fprintf(f, "CCOSTATE %d\n", state->schema);
-    char *toolchain_hex = cco_hex_encode(state->toolchain ? state->toolchain : "");
+    char *toolchain_hex =
+        cco_hex_encode(state->toolchain ? state->toolchain : "");
     fprintf(f, "T %s\n", toolchain_hex);
     free(toolchain_hex);
     for (size_t i = 0; i < state->file_count; ++i) {
         char *path_hex = cco_hex_encode(state->files[i].path);
-        fprintf(f, "F %llu %lld %s %s\n", (unsigned long long)state->files[i].size,
-                (long long)state->files[i].mtime_ns,
-                state->files[i].hash && *state->files[i].hash ? state->files[i].hash : "-", path_hex);
+        fprintf(
+            f, "F %llu %lld %s %s\n", (unsigned long long)state->files[i].size,
+            (long long)state->files[i].mtime_ns,
+            state->files[i].hash && *state->files[i].hash ? state->files[i].hash
+                                                          : "-",
+            path_hex);
         free(path_hex);
     }
     for (size_t i = 0; i < state->action_count; ++i) {
         char *id_hex = cco_hex_encode(state->actions[i].id);
-        fprintf(f, "A %s %s\n", id_hex, state->actions[i].fingerprint ? state->actions[i].fingerprint : "");
+        fprintf(f, "A %s %s\n", id_hex,
+                state->actions[i].fingerprint ? state->actions[i].fingerprint
+                                              : "");
         free(id_hex);
         for (size_t j = 0; j < state->actions[i].deps.count; ++j) {
             char *dep_hex = cco_hex_encode(state->actions[i].deps.items[j]);
@@ -1280,7 +1440,8 @@ static bool cco_state_save(const Cco_State *state, const char *path) {
         remove(path);
         ok = rename(cco_sb_cstr(&tmp), path) == 0;
     }
-    if (!ok) remove(cco_sb_cstr(&tmp));
+    if (!ok)
+        remove(cco_sb_cstr(&tmp));
     cco_sb_free(&tmp);
     return ok;
 }
@@ -1303,7 +1464,8 @@ static char *cco_shell_quote(const char *s) {
     Cco_SB sb = {0};
     cco_sb_append_ch(&sb, '"');
     for (const char *p = s; *p; ++p) {
-        if (*p == '"') cco_sb_append_ch(&sb, '\\');
+        if (*p == '"')
+            cco_sb_append_ch(&sb, '\\');
         cco_sb_append_ch(&sb, *p);
     }
     cco_sb_append_ch(&sb, '"');
@@ -1314,8 +1476,10 @@ static char *cco_shell_quote(const char *s) {
     Cco_SB sb = {0};
     cco_sb_append_ch(&sb, '\'');
     for (const char *p = s; *p; ++p) {
-        if (*p == '\'') cco_sb_append(&sb, "'\\''");
-        else cco_sb_append_ch(&sb, *p);
+        if (*p == '\'')
+            cco_sb_append(&sb, "'\\''");
+        else
+            cco_sb_append_ch(&sb, *p);
     }
     cco_sb_append_ch(&sb, '\'');
     char *out = cco_xstrdup(cco_sb_cstr(&sb));
@@ -1339,12 +1503,14 @@ static char *cco_capture_output(const char *program, const char *argument) {
     free(q1);
     free(q2);
     cco_sb_free(&cmd);
-    if (!pipe) return cco_xstrdup("");
+    if (!pipe)
+        return cco_xstrdup("");
     Cco_SB out = {0};
     char buf[4096];
     while (fgets(buf, sizeof(buf), pipe)) {
         cco_sb_append(&out, buf);
-        if (out.len > 1024 * 1024) break;
+        if (out.len > 1024 * 1024)
+            break;
     }
 #ifdef _WIN32
     _pclose(pipe);
@@ -1384,27 +1550,36 @@ static char *cco_toolchain_fingerprint(const Cco_Workspace *ws) {
 static char *cco_file_hash(Cco_Ctx *ctx, const char *path) {
     uintmax_t size = 0;
     int64_t mtime = 0;
-    if (!cco_stat_file(path, &size, &mtime)) return cco_xstrdup("");
+    if (!cco_stat_file(path, &size, &mtime))
+        return cco_xstrdup("");
     char *key = cco_canonical_path(path);
     if (ctx->state) {
         Cco_FileRecord *rec = cco_state_find_file(ctx->state, key);
-        if (rec && rec->size == size && rec->mtime_ns == mtime && rec->hash && *rec->hash) {
+        if (rec && rec->size == size && rec->mtime_ns == mtime && rec->hash &&
+            *rec->hash) {
             char *hash = cco_xstrdup(rec->hash);
             free(key);
             return hash;
         }
     }
     FILE *f = fopen(path, "rb");
-    if (!f) { free(key); return cco_xstrdup(""); }
+    if (!f) {
+        free(key);
+        return cco_xstrdup("");
+    }
     Cco_Sha256 sha;
     cco_sha_init(&sha);
     char *buf = (char *)cco_xmalloc(1024 * 1024);
     size_t n;
-    while ((n = fread(buf, 1, 1024 * 1024, f)) > 0) cco_sha_update(&sha, buf, n);
+    while ((n = fread(buf, 1, 1024 * 1024, f)) > 0)
+        cco_sha_update(&sha, buf, n);
     free(buf);
     bool error = ferror(f) != 0;
     fclose(f);
-    if (error) { free(key); return cco_xstrdup(""); }
+    if (error) {
+        free(key);
+        return cco_xstrdup("");
+    }
     char *hash = cco_sha_hex(&sha);
     if (ctx->state) {
         Cco_FileRecord *rec = cco_state_add_file(ctx->state, key);
@@ -1419,30 +1594,40 @@ static char *cco_file_hash(Cco_Ctx *ctx, const char *path) {
 
 static bool cco_target_seen(const Cco_Target_Array *seen, const Cco_Target *t) {
     for (size_t i = 0; i < seen->count; ++i) {
-        if (seen->items[i] == t) return true;
+        if (seen->items[i] == t)
+            return true;
     }
     return false;
 }
 
 static void cco_add_unique(Cco_Str_Array *a, const char *value) {
-    if (!cco_str_array_contains(a, value)) cco_str_array_push(a, value);
+    if (!cco_str_array_contains(a, value))
+        cco_str_array_push(a, value);
 }
 
-static void cco_collect_flags(const Cco_Target *t, Cco_Str_Array *includes, Cco_Str_Array *defines,
-                              Cco_Str_Array *linkflags, Cco_Target_Array *seen) {
-    if (cco_target_seen(seen, t)) return;
+static void cco_collect_flags(const Cco_Target *t, Cco_Str_Array *includes,
+                              Cco_Str_Array *defines, Cco_Str_Array *linkflags,
+                              Cco_Target_Array *seen) {
+    if (cco_target_seen(seen, t))
+        return;
     cco_target_array_push(seen, (Cco_Target *)t);
-    for (size_t i = 0; i < t->includes.count; ++i) cco_add_unique(includes, t->includes.items[i]);
-    for (size_t i = 0; i < t->defines.count; ++i) cco_add_unique(defines, t->defines.items[i]);
-    for (size_t i = 0; i < t->linkflags.count; ++i) cco_add_unique(linkflags, t->linkflags.items[i]);
+    for (size_t i = 0; i < t->includes.count; ++i)
+        cco_add_unique(includes, t->includes.items[i]);
+    for (size_t i = 0; i < t->defines.count; ++i)
+        cco_add_unique(defines, t->defines.items[i]);
+    for (size_t i = 0; i < t->linkflags.count; ++i)
+        cco_add_unique(linkflags, t->linkflags.items[i]);
     for (size_t i = 0; i < t->links.count; ++i) {
-        cco_collect_flags(t->links.items[i], includes, defines, linkflags, seen);
+        cco_collect_flags(t->links.items[i], includes, defines, linkflags,
+                          seen);
     }
 }
 
-static void cco_collect_objects(const Cco_Workspace *ws, const Cco_Target *t, Cco_Str_Array *objects,
+static void cco_collect_objects(const Cco_Workspace *ws, const Cco_Target *t,
+                                Cco_Str_Array *objects,
                                 Cco_Target_Array *seen) {
-    if (cco_target_seen(seen, t)) return;
+    if (cco_target_seen(seen, t))
+        return;
     cco_target_array_push(seen, (Cco_Target *)t);
     for (size_t i = 0; i < t->sources.count; ++i) {
         char *obj = cco_object_path(ws, t, t->sources.items[i]);
@@ -1450,14 +1635,17 @@ static void cco_collect_objects(const Cco_Workspace *ws, const Cco_Target *t, Cc
     }
     for (size_t i = 0; i < t->links.count; ++i) {
         const Cco_Target *dep = t->links.items[i];
-        if (dep->kind == CCO_SHARED_LIBRARY) continue;
+        if (dep->kind == CCO_SHARED_LIBRARY)
+            continue;
         cco_collect_objects(ws, dep, objects, seen);
     }
 }
 
-static void cco_collect_shared_flags(const Cco_Workspace *ws, const Cco_Target *t,
-                                     Cco_Str_Array *flags, Cco_Target_Array *seen) {
-    if (cco_target_seen(seen, t)) return;
+static void cco_collect_shared_flags(const Cco_Workspace *ws,
+                                     const Cco_Target *t, Cco_Str_Array *flags,
+                                     Cco_Target_Array *seen) {
+    if (cco_target_seen(seen, t))
+        return;
     cco_target_array_push(seen, (Cco_Target *)t);
     for (size_t i = 0; i < t->links.count; ++i) {
         const Cco_Target *dep = t->links.items[i];
@@ -1488,8 +1676,9 @@ static void cco_collect_shared_flags(const Cco_Workspace *ws, const Cco_Target *
     }
 }
 
-static Cco_Str_Array cco_compile_command(const Cco_Workspace *ws, const Cco_Target *t,
-                                         const char *src, const char *obj,
+static Cco_Str_Array cco_compile_command(const Cco_Workspace *ws,
+                                         const Cco_Target *t, const char *src,
+                                         const char *obj,
                                          const Cco_Str_Array *includes,
                                          const Cco_Str_Array *defines,
                                          const char *depfile) {
@@ -1518,7 +1707,8 @@ static Cco_Str_Array cco_compile_command(const Cco_Workspace *ws, const Cco_Targ
             cco_str_array_push(&cmd, cco_sb_cstr(&sb));
             cco_sb_free(&sb);
         }
-        for (size_t i = 0; i < t->cflags.count; ++i) cco_str_array_push(&cmd, t->cflags.items[i]);
+        for (size_t i = 0; i < t->cflags.count; ++i)
+            cco_str_array_push(&cmd, t->cflags.items[i]);
         if (depfile && *depfile) {
             cco_str_array_push(&cmd, "/sourceDependencies");
             cco_str_array_push(&cmd, depfile);
@@ -1550,8 +1740,10 @@ static Cco_Str_Array cco_compile_command(const Cco_Workspace *ws, const Cco_Targ
             cco_str_array_push(&cmd, cco_sb_cstr(&sb));
             cco_sb_free(&sb);
         }
-        if (t->kind == CCO_SHARED_LIBRARY) cco_str_array_push(&cmd, "-fPIC");
-        for (size_t i = 0; i < t->cflags.count; ++i) cco_str_array_push(&cmd, t->cflags.items[i]);
+        if (t->kind == CCO_SHARED_LIBRARY)
+            cco_str_array_push(&cmd, "-fPIC");
+        for (size_t i = 0; i < t->cflags.count; ++i)
+            cco_str_array_push(&cmd, t->cflags.items[i]);
         if (depfile && *depfile) {
             cco_str_array_push(&cmd, "-MD");
             cco_str_array_push(&cmd, "-MF");
@@ -1567,15 +1759,18 @@ static Cco_Str_Array cco_compile_command(const Cco_Workspace *ws, const Cco_Targ
     return cmd;
 }
 
-static Cco_Str_Array cco_link_command(const Cco_Workspace *ws, const Cco_Str_Array *objects,
-                                      const char *out, const Cco_Str_Array *linkflags,
-                                      bool shared) {
+static Cco_Str_Array
+cco_link_command(const Cco_Workspace *ws, const Cco_Str_Array *objects,
+                 const char *out, const Cco_Str_Array *linkflags, bool shared) {
     Cco_Str_Array cmd = {0};
     cco_str_array_push(&cmd, ws->cc);
-    if (ws->msvc) cco_str_array_push(&cmd, "/nologo");
-    for (size_t i = 0; i < objects->count; ++i) cco_str_array_push(&cmd, objects->items[i]);
+    if (ws->msvc)
+        cco_str_array_push(&cmd, "/nologo");
+    for (size_t i = 0; i < objects->count; ++i)
+        cco_str_array_push(&cmd, objects->items[i]);
     if (ws->msvc) {
-        if (shared) cco_str_array_push(&cmd, "/LD");
+        if (shared)
+            cco_str_array_push(&cmd, "/LD");
         Cco_SB fe = {0};
         cco_sb_append(&fe, "/Fe:");
         cco_sb_append(&fe, out);
@@ -1592,7 +1787,8 @@ static Cco_Str_Array cco_link_command(const Cco_Workspace *ws, const Cco_Str_Arr
         cco_str_array_push(&cmd, "-o");
         cco_str_array_push(&cmd, out);
     }
-    for (size_t i = 0; i < linkflags->count; ++i) cco_str_array_push(&cmd, linkflags->items[i]);
+    for (size_t i = 0; i < linkflags->count; ++i)
+        cco_str_array_push(&cmd, linkflags->items[i]);
     return cmd;
 }
 
@@ -1614,10 +1810,17 @@ static char *cco_depfile_for(const Cco_Workspace *ws, const char *obj) {
 
 static bool cco_read_text_file(const char *path, char **out) {
     FILE *f = fopen(path, "rb");
-    if (!f) return false;
-    if (fseek(f, 0, SEEK_END) != 0) { fclose(f); return false; }
+    if (!f)
+        return false;
+    if (fseek(f, 0, SEEK_END) != 0) {
+        fclose(f);
+        return false;
+    }
     long n = ftell(f);
-    if (n < 0) { fclose(f); return false; }
+    if (n < 0) {
+        fclose(f);
+        return false;
+    }
     rewind(f);
     char *buf = (char *)cco_xmalloc((size_t)n + 1);
     size_t got = fread(buf, 1, (size_t)n, f);
@@ -1637,15 +1840,33 @@ static char *cco_json_unescape(const char *input, size_t n) {
         }
         char next = input[++i];
         switch (next) {
-        case '"': cco_sb_append_ch(&sb, '"'); break;
-        case '\\': cco_sb_append_ch(&sb, '\\'); break;
-        case '/': cco_sb_append_ch(&sb, '/'); break;
-        case 'b': cco_sb_append_ch(&sb, '\b'); break;
-        case 'f': cco_sb_append_ch(&sb, '\f'); break;
-        case 'n': cco_sb_append_ch(&sb, '\n'); break;
-        case 'r': cco_sb_append_ch(&sb, '\r'); break;
-        case 't': cco_sb_append_ch(&sb, '\t'); break;
-        default: cco_sb_append_ch(&sb, next); break;
+        case '"':
+            cco_sb_append_ch(&sb, '"');
+            break;
+        case '\\':
+            cco_sb_append_ch(&sb, '\\');
+            break;
+        case '/':
+            cco_sb_append_ch(&sb, '/');
+            break;
+        case 'b':
+            cco_sb_append_ch(&sb, '\b');
+            break;
+        case 'f':
+            cco_sb_append_ch(&sb, '\f');
+            break;
+        case 'n':
+            cco_sb_append_ch(&sb, '\n');
+            break;
+        case 'r':
+            cco_sb_append_ch(&sb, '\r');
+            break;
+        case 't':
+            cco_sb_append_ch(&sb, '\t');
+            break;
+        default:
+            cco_sb_append_ch(&sb, next);
+            break;
         }
     }
     char *out = cco_xstrdup(cco_sb_cstr(&sb));
@@ -1653,10 +1874,13 @@ static char *cco_json_unescape(const char *input, size_t n) {
     return out;
 }
 
-static void cco_dep_add(Cco_Str_Array *deps, const char *value, const char *root) {
-    char *path = value[0] == '/' ? cco_xstrdup(value) : cco_path_join(root, value);
+static void cco_dep_add(Cco_Str_Array *deps, const char *value,
+                        const char *root) {
+    char *path =
+        value[0] == '/' ? cco_xstrdup(value) : cco_path_join(root, value);
     char *canonical = cco_canonical_path(path);
-    if (!cco_str_array_contains(deps, canonical)) cco_str_array_push(deps, canonical);
+    if (!cco_str_array_contains(deps, canonical))
+        cco_str_array_push(deps, canonical);
     free(canonical);
     free(path);
 }
@@ -1664,24 +1888,31 @@ static void cco_dep_add(Cco_Str_Array *deps, const char *value, const char *root
 static Cco_Str_Array cco_parse_depfile(const char *depfile, const char *root) {
     Cco_Str_Array deps = {0};
     char *text = NULL;
-    if (!cco_read_text_file(depfile, &text)) return deps;
+    if (!cco_read_text_file(depfile, &text))
+        return deps;
     if (strstr(depfile, ".json")) {
         const char *keys[2] = {"\"Path\"", "\"Source\""};
         for (int k = 0; k < 2; ++k) {
             const char *p = text;
             while ((p = strstr(p, keys[k])) != NULL) {
                 p += strlen(keys[k]);
-                while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n') ++p;
-                if (*p != ':') continue;
+                while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')
+                    ++p;
+                if (*p != ':')
+                    continue;
                 ++p;
-                while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n') ++p;
-                if (*p != '"') continue;
+                while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')
+                    ++p;
+                if (*p != '"')
+                    continue;
                 const char *begin = ++p;
                 while (*p && *p != '"') {
-                    if (*p == '\\' && p[1]) ++p;
+                    if (*p == '\\' && p[1])
+                        ++p;
                     ++p;
                 }
-                if (*p != '"') break;
+                if (*p != '"')
+                    break;
                 char *value = cco_json_unescape(begin, (size_t)(p - begin));
                 cco_dep_add(&deps, value, root);
                 free(value);
@@ -1698,7 +1929,8 @@ static Cco_Str_Array cco_parse_depfile(const char *depfile, const char *root) {
         if (text[i] == '\\' && text[i + 1] == '\n') {
             cco_sb_append_ch(&joined, ' ');
             ++i;
-        } else if (text[i] == '\\' && text[i + 1] == '\r' && text[i + 2] == '\n') {
+        } else if (text[i] == '\\' && text[i + 1] == '\r' &&
+                   text[i + 2] == '\n') {
             cco_sb_append_ch(&joined, ' ');
             i += 2;
         } else {
@@ -1708,7 +1940,8 @@ static Cco_Str_Array cco_parse_depfile(const char *depfile, const char *root) {
     free(text);
     char *line = joined.data ? joined.data : (char *)"";
     char *colon = strstr(line, ": ");
-    if (!colon) colon = strstr(line, ":\t");
+    if (!colon)
+        colon = strstr(line, ":\t");
     if (!colon) {
         cco_sb_free(&joined);
         return deps;
@@ -1723,13 +1956,16 @@ static Cco_Str_Array cco_parse_depfile(const char *depfile, const char *root) {
             escaped = false;
         } else if (c == '\\') {
             escaped = true;
-        } else if (c == '\0' || c == ' ' || c == '\t' || c == '\n' || c == '\r') {
+        } else if (c == '\0' || c == ' ' || c == '\t' || c == '\n' ||
+                   c == '\r') {
             if (token.len > 0) {
                 cco_dep_add(&deps, cco_sb_cstr(&token), root);
                 token.len = 0;
-                if (token.data) token.data[0] = '\0';
+                if (token.data)
+                    token.data[0] = '\0';
             }
-            if (c == '\0') break;
+            if (c == '\0')
+                break;
         } else {
             cco_sb_append_ch(&token, c);
         }
@@ -1741,8 +1977,9 @@ static Cco_Str_Array cco_parse_depfile(const char *depfile, const char *root) {
     return deps;
 }
 
-static char *cco_compile_fingerprint(Cco_Ctx *ctx, const Cco_Target *t, const char *src,
-                                     const char *obj, const Cco_Str_Array *cmd,
+static char *cco_compile_fingerprint(Cco_Ctx *ctx, const Cco_Target *t,
+                                     const char *src, const char *obj,
+                                     const Cco_Str_Array *cmd,
                                      const Cco_Str_Array *deps) {
     Cco_Str_Array parts = {0};
     cco_str_array_push(&parts, "compile");
@@ -1758,7 +1995,8 @@ static char *cco_compile_fingerprint(Cco_Ctx *ctx, const Cco_Target *t, const ch
     char *src_hash = cco_file_hash(ctx, src);
     cco_str_array_push(&parts, *src_hash ? src_hash : "<missing>");
     free(src_hash);
-    for (size_t i = 0; i < cmd->count; ++i) cco_str_array_push(&parts, cmd->items[i]);
+    for (size_t i = 0; i < cmd->count; ++i)
+        cco_str_array_push(&parts, cmd->items[i]);
     for (size_t i = 0; i < deps->count; ++i) {
         cco_str_array_push(&parts, deps->items[i]);
         char *hash = cco_file_hash(ctx, deps->items[i]);
@@ -1770,9 +2008,11 @@ static char *cco_compile_fingerprint(Cco_Ctx *ctx, const Cco_Target *t, const ch
     return fp;
 }
 
-static void cco_collect_shared_outputs(const Cco_Workspace *ws, const Cco_Target *t,
-                                       Cco_Str_Array *out, Cco_Target_Array *seen) {
-    if (cco_target_seen(seen, t)) return;
+static void cco_collect_shared_outputs(const Cco_Workspace *ws,
+                                       const Cco_Target *t, Cco_Str_Array *out,
+                                       Cco_Target_Array *seen) {
+    if (cco_target_seen(seen, t))
+        return;
     cco_target_array_push(seen, (Cco_Target *)t);
     for (size_t i = 0; i < t->links.count; ++i) {
         const Cco_Target *dep = t->links.items[i];
@@ -1784,8 +2024,9 @@ static void cco_collect_shared_outputs(const Cco_Workspace *ws, const Cco_Target
     }
 }
 
-static char *cco_link_fingerprint(Cco_Ctx *ctx, const Cco_Target *t, const char *out,
-                                  const Cco_Str_Array *objects, const Cco_Str_Array *shared,
+static char *cco_link_fingerprint(Cco_Ctx *ctx, const Cco_Target *t,
+                                  const char *out, const Cco_Str_Array *objects,
+                                  const Cco_Str_Array *shared,
                                   const Cco_Str_Array *cmd) {
     Cco_Str_Array parts = {0};
     cco_str_array_push(&parts, "link");
@@ -1793,7 +2034,8 @@ static char *cco_link_fingerprint(Cco_Ctx *ctx, const Cco_Target *t, const char 
     cco_str_array_push(&parts, ctx->root);
     cco_str_array_push(&parts, t->name);
     cco_str_array_push(&parts, out);
-    for (size_t i = 0; i < cmd->count; ++i) cco_str_array_push(&parts, cmd->items[i]);
+    for (size_t i = 0; i < cmd->count; ++i)
+        cco_str_array_push(&parts, cmd->items[i]);
     for (size_t i = 0; i < objects->count; ++i) {
         cco_str_array_push(&parts, objects->items[i]);
         char *hash = cco_file_hash(ctx, objects->items[i]);
@@ -1812,7 +2054,8 @@ static char *cco_link_fingerprint(Cco_Ctx *ctx, const Cco_Target *t, const char 
 }
 
 static bool cco_compile_one(Cco_Ctx *ctx, const Cco_Target *t, const char *src,
-                            const Cco_Str_Array *includes, const Cco_Str_Array *defines) {
+                            const Cco_Str_Array *includes,
+                            const Cco_Str_Array *defines) {
     if (!cco_path_is_file(src)) {
         fprintf(stderr, "cco: source file not found: %s\n", src);
         return false;
@@ -1825,15 +2068,20 @@ static bool cco_compile_one(Cco_Ctx *ctx, const Cco_Target *t, const char *src,
     cco_sb_append(&id_sb, t->name);
     cco_sb_append_ch(&id_sb, ':');
     cco_sb_append(&id_sb, canon_src);
-    Cco_ActionRecord *prev = ctx->state ? cco_state_find_action(ctx->state, cco_sb_cstr(&id_sb)) : NULL;
+    Cco_ActionRecord *prev =
+        ctx->state ? cco_state_find_action(ctx->state, cco_sb_cstr(&id_sb))
+                   : NULL;
 
     Cco_Str_Array empty_deps = {0};
     const Cco_Str_Array *deps = prev ? &prev->deps : &empty_deps;
-    Cco_Str_Array cmd = cco_compile_command(ctx->ws, t, src, obj, includes, defines, depfile);
+    Cco_Str_Array cmd =
+        cco_compile_command(ctx->ws, t, src, obj, includes, defines, depfile);
     char *fingerprint = cco_compile_fingerprint(ctx, t, src, obj, &cmd, deps);
     bool has_output = cco_path_is_file(obj);
-    if (prev && prev->fingerprint && strcmp(prev->fingerprint, fingerprint) == 0 && has_output) {
-        if (ctx->explain) printf("[skip] %s (cache hit)\n", obj);
+    if (prev && prev->fingerprint &&
+        strcmp(prev->fingerprint, fingerprint) == 0 && has_output) {
+        if (ctx->explain)
+            printf("[skip] %s (cache hit)\n", obj);
         free(fingerprint);
         cco_str_array_free(&cmd);
         cco_sb_free(&id_sb);
@@ -1843,7 +2091,10 @@ static bool cco_compile_one(Cco_Ctx *ctx, const Cco_Target *t, const char *src,
         return true;
     }
     if (ctx->explain) {
-        const char *reason = !prev ? "no cached action" : (!has_output ? "output is missing" : "inputs or command changed");
+        const char *reason = !prev
+                                 ? "no cached action"
+                                 : (!has_output ? "output is missing"
+                                                : "inputs or command changed");
         printf("[build] %s (%s)\n", obj, reason);
     }
     if (!cco_ensure_parent(obj)) {
@@ -1857,7 +2108,8 @@ static bool cco_compile_one(Cco_Ctx *ctx, const Cco_Target *t, const char *src,
         return false;
     }
     if (ctx->dry_run) {
-        for (size_t i = 0; i < cmd.count; ++i) printf("%s%s", i ? " " : "> ", cmd.items[i]);
+        for (size_t i = 0; i < cmd.count; ++i)
+            printf("%s%s", i ? " " : "> ", cmd.items[i]);
         printf("\n");
         free(fingerprint);
         cco_str_array_free(&cmd);
@@ -1882,7 +2134,8 @@ static bool cco_compile_one(Cco_Ctx *ctx, const Cco_Target *t, const char *src,
     free(fingerprint);
     fingerprint = cco_compile_fingerprint(ctx, t, src, obj, &cmd, &new_deps);
     if (ctx->state) {
-        Cco_ActionRecord *rec = cco_state_add_action(ctx->state, cco_sb_cstr(&id_sb));
+        Cco_ActionRecord *rec =
+            cco_state_add_action(ctx->state, cco_sb_cstr(&id_sb));
         free(rec->fingerprint);
         rec->fingerprint = fingerprint;
         cco_str_array_free(&rec->deps);
@@ -1901,18 +2154,23 @@ static bool cco_compile_one(Cco_Ctx *ctx, const Cco_Target *t, const char *src,
     free(obj);
     return true;
 }
-static bool cco_compile_target(Cco_Ctx *ctx, const Cco_Target *t, Cco_Target_Array *compiled) {
-    if (cco_target_seen(compiled, t)) return true;
+static bool cco_compile_target(Cco_Ctx *ctx, const Cco_Target *t,
+                               Cco_Target_Array *compiled) {
+    if (cco_target_seen(compiled, t))
+        return true;
     for (size_t i = 0; i < t->links.count; ++i) {
         const Cco_Target *dep = t->links.items[i];
-        if (dep->kind == CCO_SHARED_LIBRARY) continue;
-        if (!cco_compile_target(ctx, dep, compiled)) return false;
+        if (dep->kind == CCO_SHARED_LIBRARY)
+            continue;
+        if (!cco_compile_target(ctx, dep, compiled))
+            return false;
     }
     Cco_Str_Array includes = {0}, defines = {0}, linkflags = {0};
     Cco_Target_Array seen = {0};
     cco_collect_flags(t, &includes, &defines, &linkflags, &seen);
     for (size_t i = 0; i < t->sources.count; ++i) {
-        if (!cco_compile_one(ctx, t, t->sources.items[i], &includes, &defines)) {
+        if (!cco_compile_one(ctx, t, t->sources.items[i], &includes,
+                             &defines)) {
             cco_str_array_free(&includes);
             cco_str_array_free(&defines);
             cco_str_array_free(&linkflags);
@@ -1928,19 +2186,27 @@ static bool cco_compile_target(Cco_Ctx *ctx, const Cco_Target *t, Cco_Target_Arr
     return true;
 }
 
-static bool cco_link_target(Cco_Ctx *ctx, const Cco_Target *t, Cco_Target_Array *compiled,
+static bool cco_link_target(Cco_Ctx *ctx, const Cco_Target *t,
+                            Cco_Target_Array *compiled,
                             Cco_Target_Array *linked) {
-    if (t->kind == CCO_LIBRARY) return true;
+    if (t->kind == CCO_LIBRARY)
+        return true;
     for (size_t i = 0; i < t->links.count; ++i) {
         const Cco_Target *dep = t->links.items[i];
         if (dep->kind == CCO_SHARED_LIBRARY) {
-            if (!cco_link_target(ctx, dep, compiled, linked)) return false;
+            if (!cco_link_target(ctx, dep, compiled, linked))
+                return false;
         }
     }
-    if (!cco_compile_target(ctx, t, compiled)) return false;
-    if (cco_target_seen(linked, t)) return true;
+    if (!cco_compile_target(ctx, t, compiled))
+        return false;
+    if (cco_target_seen(linked, t))
+        return true;
     if (t->kind == CCO_SHARED_LIBRARY && ctx->ws->msvc) {
-        fprintf(stderr, "cco: shared libraries are not implemented for MSVC yet (`%s`)\n", t->name);
+        fprintf(
+            stderr,
+            "cco: shared libraries are not implemented for MSVC yet (`%s`)\n",
+            t->name);
         return false;
     }
 
@@ -1954,7 +2220,8 @@ static bool cco_link_target(Cco_Ctx *ctx, const Cco_Target *t, Cco_Target_Array 
         return false;
     }
     bool shared = t->kind == CCO_SHARED_LIBRARY;
-    char *out = shared ? cco_shared_output_path(ctx->ws, t) : cco_target_output(ctx->ws, t);
+    char *out = shared ? cco_shared_output_path(ctx->ws, t)
+                       : cco_target_output(ctx->ws, t);
 
     Cco_Str_Array includes = {0}, defines = {0}, linkflags = {0};
     Cco_Target_Array flag_seen = {0};
@@ -1964,16 +2231,22 @@ static bool cco_link_target(Cco_Ctx *ctx, const Cco_Target *t, Cco_Target_Array 
     Cco_Str_Array shared_libs = {0};
     Cco_Target_Array shared_outputs_seen = {0};
     cco_collect_shared_outputs(ctx->ws, t, &shared_libs, &shared_outputs_seen);
-    Cco_Str_Array cmd = cco_link_command(ctx->ws, &objects, out, &linkflags, shared);
+    Cco_Str_Array cmd =
+        cco_link_command(ctx->ws, &objects, out, &linkflags, shared);
 
     Cco_SB id_sb = {0};
     cco_sb_append(&id_sb, "link:");
     cco_sb_append(&id_sb, t->name);
-    Cco_ActionRecord *prev = ctx->state ? cco_state_find_action(ctx->state, cco_sb_cstr(&id_sb)) : NULL;
-    char *fingerprint = cco_link_fingerprint(ctx, t, out, &objects, &shared_libs, &cmd);
+    Cco_ActionRecord *prev =
+        ctx->state ? cco_state_find_action(ctx->state, cco_sb_cstr(&id_sb))
+                   : NULL;
+    char *fingerprint =
+        cco_link_fingerprint(ctx, t, out, &objects, &shared_libs, &cmd);
     bool has_output = cco_path_is_file(out);
-    if (prev && prev->fingerprint && strcmp(prev->fingerprint, fingerprint) == 0 && has_output) {
-        if (ctx->explain) printf("[skip] %s (cache hit)\n", out);
+    if (prev && prev->fingerprint &&
+        strcmp(prev->fingerprint, fingerprint) == 0 && has_output) {
+        if (ctx->explain)
+            printf("[skip] %s (cache hit)\n", out);
         free(fingerprint);
         cco_sb_free(&id_sb);
         cco_str_array_free(&cmd);
@@ -1990,7 +2263,10 @@ static bool cco_link_target(Cco_Ctx *ctx, const Cco_Target *t, Cco_Target_Array 
         return true;
     }
     if (ctx->explain) {
-        const char *reason = !prev ? "no cached action" : (!has_output ? "output is missing" : "inputs or command changed");
+        const char *reason = !prev
+                                 ? "no cached action"
+                                 : (!has_output ? "output is missing"
+                                                : "inputs or command changed");
         printf("[link] %s (%s)\n", out, reason);
     }
     if (!cco_ensure_parent(out)) {
@@ -2010,7 +2286,8 @@ static bool cco_link_target(Cco_Ctx *ctx, const Cco_Target *t, Cco_Target_Array 
         return false;
     }
     if (ctx->dry_run) {
-        for (size_t i = 0; i < cmd.count; ++i) printf("%s%s", i ? " " : "> ", cmd.items[i]);
+        for (size_t i = 0; i < cmd.count; ++i)
+            printf("%s%s", i ? " " : "> ", cmd.items[i]);
         printf("\n");
         free(fingerprint);
         cco_sb_free(&id_sb);
@@ -2045,7 +2322,8 @@ static bool cco_link_target(Cco_Ctx *ctx, const Cco_Target *t, Cco_Target_Array 
         return false;
     }
     if (ctx->state) {
-        Cco_ActionRecord *rec = cco_state_add_action(ctx->state, cco_sb_cstr(&id_sb));
+        Cco_ActionRecord *rec =
+            cco_state_add_action(ctx->state, cco_sb_cstr(&id_sb));
         free(rec->fingerprint);
         rec->fingerprint = fingerprint;
         char *out_key = cco_canonical_path(out);
@@ -2069,15 +2347,18 @@ static bool cco_link_target(Cco_Ctx *ctx, const Cco_Target *t, Cco_Target_Array 
     cco_target_array_push(linked, (Cco_Target *)t);
     return true;
 }
-static bool cco_build_target(Cco_Ctx *ctx, const Cco_Target *t, Cco_Target_Array *compiled,
+static bool cco_build_target(Cco_Ctx *ctx, const Cco_Target *t,
+                             Cco_Target_Array *compiled,
                              Cco_Target_Array *linked) {
-    if (t->kind == CCO_LIBRARY) return cco_compile_target(ctx, t, compiled);
+    if (t->kind == CCO_LIBRARY)
+        return cco_compile_target(ctx, t, compiled);
     return cco_link_target(ctx, t, compiled, linked);
 }
 
 static Cco_Target *cco_find_target(Cco_Workspace *ws, const char *name) {
     for (size_t i = 0; i < ws->targets.count; ++i) {
-        if (strcmp(ws->targets.items[i]->name, name) == 0) return ws->targets.items[i];
+        if (strcmp(ws->targets.items[i]->name, name) == 0)
+            return ws->targets.items[i];
     }
     return NULL;
 }
@@ -2104,9 +2385,11 @@ static void cco_print_usage(const char *exe) {
 }
 
 static bool cco_write_file(const char *path, const char *content) {
-    if (!cco_ensure_parent(path)) return false;
+    if (!cco_ensure_parent(path))
+        return false;
     FILE *f = fopen(path, "wb");
-    if (!f) return false;
+    if (!f)
+        return false;
     size_t n = strlen(content);
     bool ok = fwrite(content, 1, n, f) == n;
     fclose(f);
@@ -2116,12 +2399,24 @@ static bool cco_write_file(const char *path, const char *content) {
 static void cco_json_escape(Cco_SB *sb, const char *s) {
     for (const char *p = s; *p; ++p) {
         switch (*p) {
-        case '"': cco_sb_append(sb, "\\\""); break;
-        case '\\': cco_sb_append(sb, "\\\\"); break;
-        case '\n': cco_sb_append(sb, "\\n"); break;
-        case '\r': cco_sb_append(sb, "\\r"); break;
-        case '\t': cco_sb_append(sb, "\\t"); break;
-        default: cco_sb_append_ch(sb, *p); break;
+        case '"':
+            cco_sb_append(sb, "\\\"");
+            break;
+        case '\\':
+            cco_sb_append(sb, "\\\\");
+            break;
+        case '\n':
+            cco_sb_append(sb, "\\n");
+            break;
+        case '\r':
+            cco_sb_append(sb, "\\r");
+            break;
+        case '\t':
+            cco_sb_append(sb, "\\t");
+            break;
+        default:
+            cco_sb_append_ch(sb, *p);
+            break;
         }
     }
 }
@@ -2144,12 +2439,15 @@ static int cco_clean(Cco_Workspace *ws, const Cco_Ctx *ctx) {
     free(obj);
     for (size_t i = 0; i < ws->targets.count; ++i) {
         const Cco_Target *t = ws->targets.items[i];
-        if (t->kind == CCO_LIBRARY) continue;
-        char *out = t->kind == CCO_SHARED_LIBRARY ? cco_shared_output_path(ws, t)
-                                                   : cco_target_output(ws, t);
+        if (t->kind == CCO_LIBRARY)
+            continue;
+        char *out = t->kind == CCO_SHARED_LIBRARY
+                        ? cco_shared_output_path(ws, t)
+                        : cco_target_output(ws, t);
         CCO_UNLINK(out);
         char *parent = cco_path_parent(out);
-        if (strcmp(parent, ctx->root) != 0) CCO_RMDIR(parent);
+        if (strcmp(parent, ctx->root) != 0)
+            CCO_RMDIR(parent);
         free(parent);
         free(out);
     }
@@ -2175,8 +2473,10 @@ static int cco_compdb(Cco_Workspace *ws) {
             }
             cco_str_array_push(&seen, abs);
             char *obj = cco_object_path(ws, t, abs);
-            Cco_Str_Array cmd = cco_compile_command(ws, t, abs, obj, &includes, &defines, NULL);
-            if (!first) cco_sb_append(&sb, ",\n");
+            Cco_Str_Array cmd =
+                cco_compile_command(ws, t, abs, obj, &includes, &defines, NULL);
+            if (!first)
+                cco_sb_append(&sb, ",\n");
             first = false;
             cco_sb_append(&sb, "  {\"directory\":\"");
             cco_json_escape(&sb, ws->root);
@@ -2186,7 +2486,8 @@ static int cco_compdb(Cco_Workspace *ws) {
             cco_json_escape(&sb, obj);
             cco_sb_append(&sb, "\",\"arguments\":[");
             for (size_t k = 0; k < cmd.count; ++k) {
-                if (k) cco_sb_append_ch(&sb, ',');
+                if (k)
+                    cco_sb_append_ch(&sb, ',');
                 cco_sb_append_ch(&sb, '"');
                 cco_json_escape(&sb, cmd.items[k]);
                 cco_sb_append_ch(&sb, '"');
@@ -2204,8 +2505,10 @@ static int cco_compdb(Cco_Workspace *ws) {
     cco_sb_append(&sb, "\n]\n");
     char *path = cco_path_join(ws->root, "compile_commands.json");
     bool ok = cco_write_file(path, cco_sb_cstr(&sb));
-    if (!ok) fprintf(stderr, "cco: cannot write %s\n", path);
-    else printf("wrote %s\n", path);
+    if (!ok)
+        fprintf(stderr, "cco: cannot write %s\n", path);
+    else
+        printf("wrote %s\n", path);
     free(path);
     cco_sb_free(&sb);
     cco_str_array_free(&seen);
@@ -2227,26 +2530,32 @@ static int cco_run_target(Cco_Workspace *ws, Cco_Ctx *ctx, const char *name,
     bool ok = cco_build_target(ctx, t, &compiled, &linked);
     cco_target_array_free(&compiled);
     cco_target_array_free(&linked);
-    if (!ok) return 1;
-    if (ws->dry_run) return 0;
+    if (!ok)
+        return 1;
+    if (ws->dry_run)
+        return 0;
     char *out = cco_target_output(ws, t);
     Cco_Str_Array cmd = {0};
     cco_str_array_push(&cmd, out);
-    for (size_t i = 0; i < program_args->count; ++i) cco_str_array_push(&cmd, program_args->items[i]);
+    for (size_t i = 0; i < program_args->count; ++i)
+        cco_str_array_push(&cmd, program_args->items[i]);
     int rc = cco_run_program(&cmd, ws->root, false);
     cco_str_array_free(&cmd);
     free(out);
     return rc;
 }
 
-static int cco_run_tests(Cco_Workspace *ws, Cco_Ctx *ctx, const Cco_Str_Array *names) {
+static int cco_run_tests(Cco_Workspace *ws, Cco_Ctx *ctx,
+                         const Cco_Str_Array *names) {
     Cco_Str_Array selected = {0};
     if (names->count == 0) {
         for (size_t i = 0; i < ws->targets.count; ++i) {
-            if (ws->targets.items[i]->kind == CCO_TEST) cco_str_array_push(&selected, ws->targets.items[i]->name);
+            if (ws->targets.items[i]->kind == CCO_TEST)
+                cco_str_array_push(&selected, ws->targets.items[i]->name);
         }
     } else {
-        for (size_t i = 0; i < names->count; ++i) cco_str_array_push(&selected, names->items[i]);
+        for (size_t i = 0; i < names->count; ++i)
+            cco_str_array_push(&selected, names->items[i]);
     }
     if (selected.count == 0) {
         printf("no test targets\n");
@@ -2269,10 +2578,13 @@ static int cco_run_tests(Cco_Workspace *ws, Cco_Ctx *ctx, const Cco_Str_Array *n
             cco_str_array_free(&selected);
             return 1;
         }
-        if (ws->dry_run) continue;
+        if (ws->dry_run)
+            continue;
         char *out = cco_target_output(ws, t);
         printf("running %s\n", t->name);
-        int rc = cco_run_program(&((Cco_Str_Array){.items = &out, .count = 1, .capacity = 1}), ws->root, false);
+        int rc = cco_run_program(
+            &((Cco_Str_Array){.items = &out, .count = 1, .capacity = 1}),
+            ws->root, false);
         if (rc != 0) {
             fprintf(stderr, "cco: test `%s` failed (%d)\n", t->name, rc);
             ++failures;
@@ -2289,9 +2601,11 @@ static int cco_run_tests(Cco_Workspace *ws, Cco_Ctx *ctx, const Cco_Str_Array *n
 }
 
 static bool cco_is_command(const char *s) {
-    return strcmp(s, "build") == 0 || strcmp(s, "run") == 0 || strcmp(s, "test") == 0 ||
-           strcmp(s, "compdb") == 0 || strcmp(s, "clean") == 0 || strcmp(s, "explain") == 0 ||
-           strcmp(s, "graph") == 0 || strcmp(s, "bsp") == 0 || strcmp(s, "watch") == 0;
+    return strcmp(s, "build") == 0 || strcmp(s, "run") == 0 ||
+           strcmp(s, "test") == 0 || strcmp(s, "compdb") == 0 ||
+           strcmp(s, "clean") == 0 || strcmp(s, "explain") == 0 ||
+           strcmp(s, "graph") == 0 || strcmp(s, "bsp") == 0 ||
+           strcmp(s, "watch") == 0;
 }
 
 int cco_workspace_run(Cco_Workspace *ws) {
@@ -2349,7 +2663,8 @@ int cco_workspace_run(Cco_Workspace *ws) {
         ws->cc = cco_xstrdup(ws->cc_override);
         const char *base = cco_path_basename(ws->cc);
         ws->msvc = strcmp(base, "cl") == 0 || strcmp(base, "cl.exe") == 0 ||
-                   strcmp(base, "clang-cl") == 0 || strcmp(base, "clang-cl.exe") == 0;
+                   strcmp(base, "clang-cl") == 0 ||
+                   strcmp(base, "clang-cl.exe") == 0;
     }
 
     const char *command = "build";
@@ -2359,16 +2674,19 @@ int cco_workspace_run(Cco_Workspace *ws) {
         target_start = 1;
     }
     Cco_Str_Array target_names = {0};
-    for (size_t i = target_start; i < positional.count; ++i) cco_str_array_push(&target_names, positional.items[i]);
+    for (size_t i = target_start; i < positional.count; ++i)
+        cco_str_array_push(&target_names, positional.items[i]);
 
     char *toolchain_fp = cco_toolchain_fingerprint(ws);
     Cco_State state = {0};
     char *state_file = cco_state_path(ws);
     cco_state_load(&state, state_file);
-    if (state.toolchain && strcmp(state.toolchain, toolchain_fp) != 0) cco_state_clear(&state);
+    if (state.toolchain && strcmp(state.toolchain, toolchain_fp) != 0)
+        cco_state_clear(&state);
     free(state.toolchain);
     state.toolchain = cco_xstrdup(toolchain_fp);
-    Cco_Ctx ctx = {ws, ws->root, ws->verbose, ws->dry_run, ws->explain, &state, toolchain_fp};
+    Cco_Ctx ctx = {ws,          ws->root, ws->verbose, ws->dry_run,
+                   ws->explain, &state,   toolchain_fp};
 
     int result = 0;
     if (strcmp(command, "clean") == 0) {
@@ -2377,22 +2695,26 @@ int cco_workspace_run(Cco_Workspace *ws) {
         result = cco_compdb(ws);
     } else if (strcmp(command, "graph") == 0 || strcmp(command, "bsp") == 0 ||
                strcmp(command, "watch") == 0) {
-        fprintf(stderr, "cco: `%s` is not implemented in this prototype\n", command);
+        fprintf(stderr, "cco: `%s` is not implemented in this prototype\n",
+                command);
         result = 1;
     } else if (strcmp(command, "run") == 0) {
         if (target_names.count == 0) {
             fprintf(stderr, "cco: run expects a target\n");
             result = 2;
         } else {
-            result = cco_run_target(ws, &ctx, target_names.items[0], &program_args);
+            result =
+                cco_run_target(ws, &ctx, target_names.items[0], &program_args);
         }
         if (!ws->dry_run) {
-            if (!cco_state_save(&state, state_file)) fprintf(stderr, "cco: cannot save build state\n");
+            if (!cco_state_save(&state, state_file))
+                fprintf(stderr, "cco: cannot save build state\n");
         }
     } else if (strcmp(command, "test") == 0) {
         result = cco_run_tests(ws, &ctx, &target_names);
         if (!ws->dry_run) {
-            if (!cco_state_save(&state, state_file)) fprintf(stderr, "cco: cannot save build state\n");
+            if (!cco_state_save(&state, state_file))
+                fprintf(stderr, "cco: cannot save build state\n");
         }
     } else {
         if (strcmp(command, "explain") == 0) {
@@ -2404,7 +2726,8 @@ int cco_workspace_run(Cco_Workspace *ws) {
             for (size_t i = 0; i < target_names.count; ++i) {
                 Cco_Target *t = cco_find_target(ws, target_names.items[i]);
                 if (!t) {
-                    fprintf(stderr, "cco: no such target: %s\n", target_names.items[i]);
+                    fprintf(stderr, "cco: no such target: %s\n",
+                            target_names.items[i]);
                     cco_str_array_free(&selected);
                     cco_str_array_free(&target_names);
                     cco_str_array_free(&positional);
@@ -2416,18 +2739,21 @@ int cco_workspace_run(Cco_Workspace *ws) {
         } else {
             for (size_t i = 0; i < ws->targets.count; ++i) {
                 Cco_Target *t = ws->targets.items[i];
-                if (t->kind == CCO_EXECUTABLE || t->kind == CCO_SHARED_LIBRARY) cco_str_array_push(&selected, t->name);
+                if (t->kind == CCO_EXECUTABLE || t->kind == CCO_SHARED_LIBRARY)
+                    cco_str_array_push(&selected, t->name);
             }
             if (selected.count == 0) {
                 for (size_t i = 0; i < ws->targets.count; ++i) {
                     Cco_Target *t = ws->targets.items[i];
-                    if (t->kind == CCO_LIBRARY) cco_str_array_push(&selected, t->name);
+                    if (t->kind == CCO_LIBRARY)
+                        cco_str_array_push(&selected, t->name);
                 }
             }
             if (selected.count == 0) {
                 for (size_t i = 0; i < ws->targets.count; ++i) {
                     Cco_Target *t = ws->targets.items[i];
-                    if (t->kind == CCO_TEST) cco_str_array_push(&selected, t->name);
+                    if (t->kind == CCO_TEST)
+                        cco_str_array_push(&selected, t->name);
                 }
             }
         }
@@ -2448,7 +2774,8 @@ int cco_workspace_run(Cco_Workspace *ws) {
         }
         cco_str_array_free(&selected);
         if (!ws->dry_run) {
-            if (!cco_state_save(&state, state_file)) fprintf(stderr, "cco: cannot save build state\n");
+            if (!cco_state_save(&state, state_file))
+                fprintf(stderr, "cco: cannot save build state\n");
         }
     }
 
@@ -2461,8 +2788,10 @@ int cco_workspace_run(Cco_Workspace *ws) {
     return result;
 }
 
-int cco_go_rebuild_urself(int argc, char **argv, const char *source_path, const char *header_path) {
-    if (argc <= 0 || !argv || !argv[0]) return 0;
+int cco_go_rebuild_urself(int argc, char **argv, const char *source_path,
+                          const char *header_path) {
+    if (argc <= 0 || !argv || !argv[0])
+        return 0;
     char *binary = cco_executable_path(argv[0]);
 #ifdef _WIN32
     const char *ext = strrchr(binary, '.');
@@ -2479,13 +2808,15 @@ int cco_go_rebuild_urself(int argc, char **argv, const char *source_path, const 
     double src_time = cco_path_mtime(source_path);
     double hdr_time = cco_path_mtime(header_path);
     bool have_source = cco_path_is_file(source_path);
-    bool need = have_source && (bin_time < 0.0 || src_time > bin_time || hdr_time > bin_time);
+    bool need = have_source &&
+                (bin_time < 0.0 || src_time > bin_time || hdr_time > bin_time);
     if (need) {
         Cco_SB old = {0};
         cco_sb_append(&old, binary);
         cco_sb_append(&old, ".old");
         bool had = cco_path_is_file(binary);
-        if (had) rename(binary, cco_sb_cstr(&old));
+        if (had)
+            rename(binary, cco_sb_cstr(&old));
         Cco_Str_Array cmd = {0};
 #ifdef _MSC_VER
         cco_str_array_push(&cmd, "cl");
@@ -2509,14 +2840,16 @@ int cco_go_rebuild_urself(int argc, char **argv, const char *source_path, const 
         cco_str_array_free(&cmd);
         if (rc != 0) {
             fprintf(stderr, "cco: self-rebuild failed\n");
-            if (had) rename(cco_sb_cstr(&old), binary);
+            if (had)
+                rename(cco_sb_cstr(&old), binary);
             cco_sb_free(&old);
             free(binary);
             exit(1);
         }
         cco_sb_free(&old);
         Cco_Str_Array args = {0};
-        for (int i = 0; i < argc; ++i) cco_str_array_push(&args, i == 0 ? binary : argv[i]);
+        for (int i = 0; i < argc; ++i)
+            cco_str_array_push(&args, i == 0 ? binary : argv[i]);
         int code = cco_run_program(&args, NULL, false);
         cco_str_array_free(&args);
         free(binary);
@@ -2527,6 +2860,5 @@ int cco_go_rebuild_urself(int argc, char **argv, const char *source_path, const 
 }
 
 #endif /* CCO_IMPLEMENTATION */
-
 
 #endif /* CCO_H */
