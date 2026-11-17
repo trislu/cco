@@ -1,0 +1,187 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  unix:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            cxx: g++
+          - os: ubuntu-latest
+            cxx: clang++
+          - os: macos-latest
+            cxx: clang++
+    runs-on: ${{ matrix.os }}
+    env:
+      CXX: ${{ matrix.cxx }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: seed
+        run: ${{ matrix.cxx }} -std=c++17 cpp/cco.cpp -o cco++
+      - name: generated app
+        run: |
+          ./cco++ new out/hello --name hello
+          cd out/hello
+          ${{ matrix.cxx }} -std=c++17 build.cpp -o build
+          ./build run hello
+          touch src/main.cpp
+          ./build --explain
+      - name: generated lib
+        run: |
+          ./cco++ new out/mylib --lib --name mylib
+          cd out/mylib
+          ${{ matrix.cxx }} -std=c++17 build.cpp -o build
+          ./build test
+      - name: examples 000-003
+        run: |
+          set -e
+          cd cpp/examples/000_hello_world
+          ${{ matrix.cxx }} -std=c++17 build.cpp -o build
+          ./build run hello
+          ./build --explain > explain.log
+          grep -q 'cache hit' explain.log
+          touch src/main.cpp
+          ./build --explain > explain.log
+          ! grep -q '\[build\]' explain.log
+          rm explain.log
+          cd ../001_output_customization
+          ${{ matrix.cxx }} -std=c++17 custom_build.cpp -o build
+          ./build run custom-output
+          cd ../002_static_library
+          ${{ matrix.cxx }} -std=c++17 build.cpp -o build
+          ./build run app
+          ./build test
+          echo "// ci header change" >> include/greeter/greeter.h
+          ./build --explain > explain.log
+          grep -q '\[build\]' explain.log
+          rm explain.log
+          cd ../003_shared_library
+          ${{ matrix.cxx }} -std=c++17 build.cpp -o build
+          ./build run app
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: seed
+        shell: cmd
+        run: cl /nologo /std:c++17 /O2 /Fe:cco++.exe cpp\cco.cpp
+      - name: generated app
+        shell: cmd
+        run: |
+          cco++.exe new out\hello --name hello
+          cd out\hello
+          cl /nologo /std:c++17 /O2 /Fe:build.exe build.cpp
+          build.exe run hello
+      - name: generated lib
+        shell: cmd
+        run: |
+          cco++.exe new out\mylib --lib --name mylib
+          cd out\mylib
+          cl /nologo /std:c++17 /O2 /Fe:build.exe build.cpp
+          build.exe test
+      - name: examples 000-002
+        shell: cmd
+        run: |
+          cd cpp\examples\000_hello_world
+          cl /nologo /std:c++17 /O2 /Fe:build.exe build.cpp
+          build.exe run hello
+          cd ..\001_output_customization
+          cl /nologo /std:c++17 /O2 /Fe:build.exe custom_build.cpp
+          build.exe run custom-output
+          cd ..\002_static_library
+          cl /nologo /std:c++17 /O2 /Fe:build.exe build.cpp
+          build.exe run app
+          build.exe test
+
+  c-unix:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            cc: gcc
+          - os: ubuntu-latest
+            cc: clang
+          - os: macos-latest
+            cc: clang
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: C seed
+        run: ${{ matrix.cc }} -std=c11 -Wall -Wextra -Wpedantic -Werror c/cco.c -o cco
+      - name: C generated app
+        run: |
+          ./cco new out/hello --name hello
+          cd out/hello
+          ${{ matrix.cc }} -std=c11 build.c -o build
+          ./build run hello
+      - name: C generated lib
+        run: |
+          ./cco new out/mylib --lib --name mylib
+          cd out/mylib
+          ${{ matrix.cc }} -std=c11 build.c -o build
+          ./build test
+      - name: C examples 000-003
+        run: |
+          set -e
+          cd c/examples/000_hello_world
+          ${{ matrix.cc }} -std=c11 -O2 build.c -o build
+          ./build run hello
+          ./build --explain > explain.log
+          grep -q 'cache hit' explain.log
+          touch src/main.c
+          ./build --explain > explain.log
+          ! grep -q '\[build\]' explain.log
+          rm explain.log
+          cd ../001_output_customization
+          ${{ matrix.cc }} -std=c11 -O2 custom_build.c -o build
+          ./build run custom-output
+          cd ../002_static_library
+          ${{ matrix.cc }} -std=c11 -O2 build.c -o build
+          ./build run app
+          ./build test
+          echo "/* ci header change */" >> include/greeter/greeter.h
+          ./build --explain > explain.log
+          grep -q '\[build\]' explain.log
+          rm explain.log
+          cd ../003_shared_library
+          ${{ matrix.cc }} -std=c11 -O2 build.c -o build
+          ./build run app
+
+  install-layout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: C installed seed
+        run: |
+          set -e
+          prefix="$RUNNER_TEMP/cco-c"
+          mkdir -p "$prefix/bin" "$prefix/include" "$RUNNER_TEMP/cco-c-test"
+          cc -std=c11 -Wall -Wextra -Wpedantic -Werror c/cco.c -o "$prefix/bin/cco"
+          cp c/cco.h "$prefix/include/cco.h"
+          cd "$RUNNER_TEMP/cco-c-test"
+          PATH="$prefix/bin:$PATH" cco new app --quiet
+          test -f app/cco.h
+          cd app
+          cc -std=c11 build.c -o build
+          ./build run app
+      - name: C++ installed seed
+        run: |
+          set -e
+          prefix="$RUNNER_TEMP/cco-cpp"
+          mkdir -p "$prefix/bin" "$prefix/include" "$RUNNER_TEMP/cco-cpp-test"
+          c++ -std=c++17 -Wall -Wextra -Werror cpp/cco.cpp -o "$prefix/bin/cco++"
+          cp cpp/cco.hpp "$prefix/include/cco.hpp"
+          cd "$RUNNER_TEMP/cco-cpp-test"
+          PATH="$prefix/bin:$PATH" cco++ new app --quiet
+          test -f app/cco.hpp
+          cd app
+          c++ -std=c++17 build.cpp -o build
+          ./build run app

@@ -1,0 +1,25 @@
+# C seed binaries
+/cco
+/cco.exe
+
+# C example build artifacts
+/examples/**/build
+/examples/**/build.exe
+/examples/**/build.old
+/examples/**/.cco/
+/examples/**/compile_commands.json
+/examples/**/obj/
+/examples/**/bin/
+/examples/**/custom_build
+/examples/001_output_customization/dist/
+/examples/004_raylib/third_party/
+/examples/005_protobuf/generated/
+
+# Local scratch
+/out/
+/compile_commands.json
+*.o
+*.obj
+*.pdb
+*.ilk
+*.tmp

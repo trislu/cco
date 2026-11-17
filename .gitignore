@@ -1,0 +1,7 @@
+# Root-level build/test artifacts
+/out/
+/cco
+/cco.exe
+/cco++
+/cco++.exe
+/compile_commands.json
