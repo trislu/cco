@@ -250,6 +250,10 @@ std::vector<fs::path> glob(std::string pattern);
 
 #ifdef CCO_IMPLEMENTATION
 
+// Single-header library: this block is compiled exactly once, in the TU that
+// defines CCO_IMPLEMENTATION, so these definitions cannot cause ODR
+// violations; every other TU only sees the declarations above.
+// NOLINTBEGIN(misc-definitions-in-headers)
 namespace cco {
 
 namespace {
@@ -2249,6 +2253,7 @@ void go_rebuild_urself(int argc, char **argv, const char *source_path,
 
 } // namespace cco
 
+// NOLINTEND(misc-definitions-in-headers)
 #endif // CCO_IMPLEMENTATION
 
 #endif // CCO_HPP
