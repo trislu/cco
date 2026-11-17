@@ -3,3 +3,10 @@ CompileFlags:
     - -Wall
     - -Wextra
     - -std=c++17
+
+---
+If:
+  PathMatch: .*cco\.hpp
+CompileFlags:
+  Add:
+    - -DCCO_IMPLEMENTATION

@@ -1,5 +1,19 @@
+---
+If:
+  PathMatch: .*\.c
 CompileFlags:
   Add:
     - -Wall
     - -Wextra
     - -std=c11
+
+---
+If:
+  PathMatch: .*\.h
+CompileFlags:
+  Add:
+    - -Wall
+    - -Wextra
+    - -std=c11
+    - -x
+    - c-header
