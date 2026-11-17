@@ -6,19 +6,18 @@ int main(int argc, char **argv) {
 
     cco::Workspace ws(argc, argv);
 
-    [[maybe_unused]] auto &greeter = ws.library("greeter")
-        .sources({"src/greeter.cpp"})
-        .include("include");
+    [[maybe_unused]] auto &greeter =
+        ws.library("greeter").sources({"src/greeter.cpp"}).include("include");
 
     [[maybe_unused]] auto &app = ws.executable("app")
-        .sources({"src/main.cpp"})
-        .include("include")
-        .link(greeter);
+                                     .sources({"src/main.cpp"})
+                                     .include("include")
+                                     .link(greeter);
 
     [[maybe_unused]] auto &test = ws.test("greeter_test")
-        .sources({"tests/greeter_test.cpp"})
-        .include("include")
-        .link(greeter);
+                                      .sources({"tests/greeter_test.cpp"})
+                                      .include("include")
+                                      .link(greeter);
 
     return ws.run();
 }

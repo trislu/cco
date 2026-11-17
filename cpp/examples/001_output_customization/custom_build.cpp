@@ -12,8 +12,8 @@ int main(int argc, char **argv) {
 #endif
 
     [[maybe_unused]] auto &app = ws.executable("custom-output")
-        .sources({"src/main.cpp"})
-        .output_to(output);
+                                     .sources({"src/main.cpp"})
+                                     .output_to(output);
 
     return ws.run();
 }

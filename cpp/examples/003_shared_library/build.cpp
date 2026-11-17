@@ -7,14 +7,14 @@ int main(int argc, char **argv) {
     cco::Workspace ws(argc, argv);
 
     [[maybe_unused]] auto &greeter = ws.shared_library("greeter")
-        .sources({"src/greeter.cpp"})
-        .include("include")
-        .cxxflag("-DGREETER_BUILD_DLL");
+                                         .sources({"src/greeter.cpp"})
+                                         .include("include")
+                                         .cxxflag("-DGREETER_BUILD_DLL");
 
     [[maybe_unused]] auto &app = ws.executable("app")
-        .sources({"src/main.cpp"})
-        .include("include")
-        .link(greeter);
+                                     .sources({"src/main.cpp"})
+                                     .include("include")
+                                     .link(greeter);
 
     return ws.run();
 }

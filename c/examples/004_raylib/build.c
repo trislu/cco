@@ -14,7 +14,8 @@ int main(int argc, char **argv) {
     }
 
     char header[8192];
-    int header_len = snprintf(header, sizeof(header), "%s/include/raylib.h", raylib_dir);
+    int header_len =
+        snprintf(header, sizeof(header), "%s/include/raylib.h", raylib_dir);
     if (header_len < 0 || (size_t)header_len >= sizeof(header)) {
         fprintf(stderr, "raylib path is too long\n");
         return 1;
@@ -36,7 +37,8 @@ int main(int argc, char **argv) {
     cco_target_add_source(app, "src/main.c");
 
     char include_dir[8192];
-    int include_len = snprintf(include_dir, sizeof(include_dir), "%s/include", raylib_dir);
+    int include_len =
+        snprintf(include_dir, sizeof(include_dir), "%s/include", raylib_dir);
     if (include_len < 0 || (size_t)include_len >= sizeof(include_dir)) {
         fprintf(stderr, "raylib include path is too long\n");
         return 1;

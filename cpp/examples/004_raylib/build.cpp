@@ -9,7 +9,8 @@ int main(int argc, char **argv) {
     CCO_GO_REBUILD_URSELF(argc, argv);
 
     std::string raylib_dir = "/usr/local";
-    if (const char *env = std::getenv("RAYLIB_DIR")) raylib_dir = env;
+    if (const char *env = std::getenv("RAYLIB_DIR"))
+        raylib_dir = env;
 
     if (!std::filesystem::exists(raylib_dir + "/include/raylib.h")) {
         std::fprintf(stderr,
@@ -21,10 +22,10 @@ int main(int argc, char **argv) {
 
     cco::Workspace ws(argc, argv);
     auto &app = ws.executable("raylib_demo")
-        .sources({"src/main.cpp"})
-        .include(raylib_dir + "/include")
-        .linkflag("-L" + raylib_dir + "/lib")
-        .linkflag("-lraylib");
+                    .sources({"src/main.cpp"})
+                    .include(raylib_dir + "/include")
+                    .linkflag("-L" + raylib_dir + "/lib")
+                    .linkflag("-lraylib");
 
 #if defined(__APPLE__)
     app.linkflag("-framework").linkflag("OpenGL");

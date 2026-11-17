@@ -1,6 +1,6 @@
+#include "greeter/greeter.h"
 #include <stdio.h>
 #include <string.h>
-#include "greeter/greeter.h"
 
 int main(void) {
     if (strcmp(greeter_message(), "hello, cco C") != 0) {

@@ -3,13 +3,13 @@
 #include <string>
 
 #if defined(_WIN32)
-#  if defined(GREETER_BUILD_DLL)
-#    define GREETER_API __declspec(dllexport)
-#  else
-#    define GREETER_API __declspec(dllimport)
-#  endif
+#if defined(GREETER_BUILD_DLL)
+#define GREETER_API __declspec(dllexport)
 #else
-#  define GREETER_API
+#define GREETER_API __declspec(dllimport)
+#endif
+#else
+#define GREETER_API
 #endif
 
 namespace greeter {

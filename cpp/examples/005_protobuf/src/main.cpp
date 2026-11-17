@@ -10,11 +10,14 @@ int main() {
     person.set_email("cco@example.com");
 
     std::string wire;
-    if (!person.SerializeToString(&wire)) return 1;
+    if (!person.SerializeToString(&wire))
+        return 1;
 
     tutorial::Person parsed;
-    if (!parsed.ParseFromString(wire)) return 1;
+    if (!parsed.ParseFromString(wire))
+        return 1;
 
-    std::printf("%s %d %s\n", parsed.name().c_str(), parsed.id(), parsed.email().c_str());
+    std::printf("%s %d %s\n", parsed.name().c_str(), parsed.id(),
+                parsed.email().c_str());
     return 0;
 }
