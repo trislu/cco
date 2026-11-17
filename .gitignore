@@ -5,3 +5,6 @@
 /cco++
 /cco++.exe
 /compile_commands.json
+
+# clangd background index
+.cache/
