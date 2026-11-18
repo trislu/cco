@@ -9,6 +9,7 @@
 当你学习一门编程语言时，编译器就是你需要的一切。
 
 灵感来源：
+
 - [nob.h](https://github.com/tsoding/nob.h)
 - [zig build](https://ziglang.org/learn/build-system/)
 - [odin build](https://odin-lang.org/docs/overview/)
@@ -19,7 +20,7 @@
 `cco` 有两套独立实现：
 
 | 语言 | 头文件 | seed | 文档 |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | C11 | `c/cco.h` | `c/cco.c` | [c/README.md](c/README.md) |
 | C++17 | `cpp/cco.hpp` | `cpp/cco.cpp` | [cpp/README.md](cpp/README.md) |
 

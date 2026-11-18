@@ -10,6 +10,7 @@ The idea is that when you learn a programming language, the compiler should be
 all you need.
 
 Inspired by:
+
 - [nob.h](https://github.com/tsoding/nob.h)
 - [zig build](https://ziglang.org/learn/build-system/)
 - [odin build](https://odin-lang.org/docs/overview/)
@@ -20,7 +21,7 @@ Inspired by:
 `cco` has two independent implementations:
 
 | Language | Header | Seed | Docs |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | C11 | `c/cco.h` | `c/cco.c` | [c/README.md](c/README.md) |
 | C++17 | `cpp/cco.hpp` | `cpp/cco.cpp` | [cpp/README.md](cpp/README.md) |
 
