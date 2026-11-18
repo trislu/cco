@@ -30,6 +30,12 @@
 #define _POSIX_C_SOURCE 200809L
 #endif
 
+/* With _POSIX_C_SOURCE set, Darwin hides the BSD st_mtimespec members of
+   struct stat; _DARWIN_C_SOURCE re-enables them. */
+#if defined(__APPLE__) && !defined(_DARWIN_C_SOURCE)
+#define _DARWIN_C_SOURCE 1
+#endif
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
