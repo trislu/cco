@@ -93,7 +93,7 @@ into the `cco++` binary. The C seed is `c/cco.c` and produces `cco`.
 ### 2.2 Feature Matrix
 
 | Capability | nob.h today | Decision | Notes |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Distribution | Single header + `NOB_IMPLEMENTATION` | ✅ Keep | `cco.hpp` / `cco.h` + `CCO_IMPLEMENTATION` |
 | Naming | `nob_` prefix, optional prefix-removal macro | 🔁 Change | `namespace cco`; no prefix-removal macro |
 | Logging / assertions | `nob_log`, levels, `nob_panic` | ✅ Keep | Add structured events for BSP / `--json` |
@@ -221,7 +221,7 @@ pieces the default.
 ### 3.2 Method Matrix
 
 | Method / capability | Purpose | Priority | Notes |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `build/initialize` | Handshake, return capabilities | **P0** | `bspVersion: "2.2.0"` |
 | `build/initialized` | Client acknowledgement | **P0** | May be empty |
 | `build/shutdown` / `build/exit` | Lifecycle | **P0** | Exit 0 after shutdown, otherwise 1 |
@@ -278,7 +278,7 @@ include IntelliJ Scala, IntelliJ-BSP, Metals, scala-cli, VS Code Gradle, and
 
 **C++ is not on that list.** More importantly, clangd is not a BSP client; it
 only understands `compile_commands.json` / `compile_flags.txt` (clangd issue
-#1903 is still discussing BSP support).
+1903 is still discussing BSP support).
 
 Conclusions:
 
@@ -330,7 +330,7 @@ Conclusions:
 ### 5.1 Three Approaches
 
 | Approach | Examples | Correctness | Speed | Cost | Problems |
-|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- |
 | mtime | nob.h, make | Low | Fast | Very low | Clock skew, touch without changes, branch switching, generated files |
 | depfile + mtime | make, ninja | Medium | Fast | Low | Command/toolchain changes do not invalidate; header add/remove edge cases |
 | Content fingerprint + action cache | Bazel, Buck2 | High | Medium | High | Hashing, state store, declaration of deps; first build is slower |
@@ -388,7 +388,7 @@ fp = SHA256(
 ### 5.4 Dependency Discovery (depfile)
 
 | Toolchain | Flags | Output | Notes |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | GCC | `-MD -MF <file> -MT <obj>` | Makefile-style `.d` | `-MD` includes system headers; `-MMD` excludes them |
 | Clang | Same | Same | Compatible with GCC |
 | MSVC | `/sourceDependencies <file>.json` | JSON | VS 2019 16.7+; older versions fall back to `/showIncludes` |
@@ -502,7 +502,7 @@ O <output-path-hex>
 ### 5.7 Edge Cases
 
 | Case | Behavior |
-|---|---|
+| --- | --- |
 | Output deleted | Rerun the action even if the fingerprint matches |
 | Source deleted | Remove it from the graph; error if still referenced |
 | Header deleted | depfile stat fails → treat as changed → recompile (compiler reports the real error) |
@@ -551,7 +551,7 @@ Recommendations:
 ### 5.9 Performance Budget
 
 | Scenario | Target |
-|---|---|
+| --- | --- |
 | `./build` startup + load 1k action states | < 100 ms |
 | No-op build over 1k files | < 150 ms (excluding self-rebuild check) |
 | One source change | One compile + one link (if the output changes) |
@@ -781,7 +781,7 @@ compiler-only/
 ### 6.6 Compiler Dialects
 
 | Concept | GCC | Clang | MSVC |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | C++ standard | `-std=c++17` | `-std=c++17` | `/std:c++17` |
 | C standard | `-std=c11` | `-std=c11` | `/std:c11` |
 | Defines | `-D` | `-D` | `/D` |
@@ -1130,8 +1130,8 @@ approach:
    ```
 
    ```console
-   $ c++ -std=c++17 cpp/cco.cpp -o cco++
-   $ ./cco++ new myapp
+   c++ -std=c++17 cpp/cco.cpp -o cco++
+   ./cco++ new myapp
    ```
 
    `cco++` can live at the repository root; the header is at `cpp/cco.hpp`, and
@@ -1185,7 +1185,7 @@ approach:
 ## 7. Roadmap
 
 | Phase | Content | Acceptance |
-|---|---|---|
+| --- | --- | --- |
 | **M0 Skeleton** (1–2 weeks) | `cco.hpp` infrastructure: log, fs, process, cmd, hash, temp; GNU/Clang/MSVC dialects; hello world; self-rebuild re-exec; CI matrix | Linux/macOS/Windows × gcc/clang/msvc all produce an executable with `c++ build.cpp -o build && ./build`; changing `build.cpp` recompiles automatically |
 | **M1 Graph and Execution** (2–3 weeks) | target graph, glob, compile/link, DAG scheduling, state cache (mtime first), `--explain`, `clean`, `--dry-run`, `test`, `new` / `init` | One source change rebuilds one TU; link runs only when needed; generated app/lib build on all three platforms; `./build test` works |
 | **M2 True Incrementality** (2–3 weeks) | content fingerprints, SHA-256, stat fast path, depfiles (GCC/Clang/MSVC), toolchain fingerprints, compdb, clangd integration, response files | Changing a build-script comment does not rebuild; a header change rebuilds only dependent TUs; `-D` changes rebuild everything; compiler upgrades rebuild everything; clangd reports no errors; no-op < 150 ms |
@@ -1228,7 +1228,7 @@ parallel but has the lowest priority.
 ## 9. Risks
 
 | Risk | Impact | Mitigation |
-|---|---|---|
+| --- | --- | --- |
 | Single header makes build-script compilation slow | Slower build-script iteration | Split sections + `CCO_NO_BSP`; default `-O1`; measure and optimize |
 | Incremental correctness is hard | Users distrust it; dirty builds | Extensive fixture tests; `--explain`; conservative invalidation (rebuild more rather than less) |
 | depfile misses dependencies | Underbuilding | `-MD` includes system headers; custom actions declare inputs; document dynamic-include limits |

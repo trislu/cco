@@ -15,7 +15,7 @@ c++ -std=c++17 build.cpp -o build
 ```
 
 | Directory | Demonstrates | External dependency |
-|---|---|---|
+| --- | --- | --- |
 | `000_hello_world` | executable + globbed sources | none |
 | `001_output_customization` | `output_to()` / `set_build_root()` | none |
 | `002_static_library` | object-group library, app, test target | none |

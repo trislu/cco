@@ -76,5 +76,7 @@ int main(int argc, char **argv) {
     cco_target_add_linkflag(app, "-lX11");
 #endif
 
-    return cco_workspace_run(&ws);
+    int rc = cco_workspace_run(&ws);
+    cco_workspace_free(&ws);
+    return rc;
 }

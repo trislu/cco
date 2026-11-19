@@ -79,5 +79,6 @@ See [examples/README.md](examples/README.md).
 
 ## Documents
 
+- [API reference](API.md)
 - [Design draft](../docs/design.md)
 - [C11 implementation](../c/README.md)

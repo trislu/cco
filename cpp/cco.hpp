@@ -33,6 +33,7 @@
 #ifndef CCO_HPP
 #define CCO_HPP
 
+/// Version string reported by this header.
 #define CCO_VERSION "0.2.0"
 
 #include <algorithm>
@@ -75,12 +76,18 @@
 
 namespace cco {
 
-// `__FILE__` must be captured where the header is defined, not where the
-// macro is used; otherwise CCO_HEADER_FILE would expand to build.cpp.
+/**
+ * @brief Path of the `cco.hpp` used by the build script.
+ *
+ * `__FILE__` must be captured where the header is defined, not where the
+ * macro is used; otherwise `CCO_HEADER_FILE` would expand to `build.cpp`.
+ */
 inline const char *header_file_path() { return __FILE__; }
 
 } // namespace cco
 
+/// Path of the `cco.hpp` included by this build script. The self-rebuild
+/// check compares the binary timestamp against this file.
 #ifndef CCO_HEADER_FILE
 #define CCO_HEADER_FILE ::cco::header_file_path()
 #endif
@@ -89,6 +96,8 @@ namespace cco {
 
 namespace fs = std::filesystem;
 
+/// Absolute path of the running binary. Falls back to `argv0` when the
+/// platform query fails.
 inline fs::path current_executable_path(const char *argv0) {
 #ifdef _WIN32
     wchar_t buf[4096];
@@ -117,134 +126,272 @@ inline fs::path current_executable_path(const char *argv0) {
     return ec ? fs::path(argv0) : path;
 }
 
+/**
+ * @brief Compiler driver and flag dialect.
+ *
+ * The dialect selects flag syntax (`-c -o` vs `/c /Fo`), dependency output
+ * (`-MD -MF` vs `/sourceDependencies`), and the object suffix.
+ */
 struct Toolchain {
+    /// `Gnu` covers gcc, g++, clang, and clang++.
     enum class Kind { Gnu, Msvc };
     Kind kind = Kind::Gnu;
+    /// Driver name or path, for example `c++` or `/usr/bin/g++`.
     std::string cxx = "c++";
+    /// Hash of the driver path and `--version` output. Every action
+    /// fingerprint includes this value, so a compiler upgrade rebuilds all
+    /// targets.
     std::string fingerprint;
 
+    /// Pick a driver: `override_cxx`, else `$CXX`, else `c++` (`cl` when
+    /// built by MSVC). The dialect comes from the driver basename; `cl` and
+    /// `clang-cl` select `Msvc`.
     static Toolchain detect(const std::string &override_cxx = {});
     bool is_msvc() const { return kind == Kind::Msvc; }
 };
 
+/**
+ * @brief One build product: executable, object group, shared library, or
+ *        test.
+ *
+ * Setters mutate the target and return `*this`, so calls chain. `Workspace`
+ * owns every target; a reference from a factory stays valid until the
+ * workspace is destroyed.
+ */
 struct Target {
-    enum class Kind { Executable, Library, SharedLibrary, Test };
+    enum class Kind {
+        Executable,
+        /// Object group: objects join the link line of dependents, and no
+        /// archive file is produced.
+        Library,
+        /// Adds `-L`, `-l`, and an rpath entry to dependent targets.
+        SharedLibrary,
+        /// Built and run by `run test`. A non-zero exit fails the command.
+        Test,
+    };
 
+    /// Target name. Also the default output file name.
     std::string name;
     Kind kind = Kind::Executable;
+    /// Sources to compile. Relative paths resolve against the workspace
+    /// root.
     std::vector<fs::path> source_files;
+    /// Include directories, inherited by dependent targets.
     std::vector<std::string> include_dirs;
+    /// Preprocessor defines, inherited by dependent targets.
     std::vector<std::string> define_list;
+    /// Compile flags for this target only. Never inherited.
     std::vector<std::string> cxxflags;
+    /// Link flags, inherited by dependent targets.
     std::vector<std::string> linkflags;
+    /// Targets this target links against.
     std::vector<Target *> links;
+    /// Explicit output path. Empty selects the default layout.
     fs::path output;
+    /// Standard passed to the compiler. Default `c++17`.
     std::string cppstd = "c++17";
 
     Target(std::string n, Kind k) : name(std::move(n)), kind(k) {}
 
+    /// Replace the source list. Earlier calls are discarded.
     Target &sources(std::vector<fs::path> files) {
         source_files = std::move(files);
         return *this;
     }
+    /// Append an include directory. Dependent targets inherit the entry.
     Target &include(std::string dir) {
         include_dirs.push_back(std::move(dir));
         return *this;
     }
+    /// Append a define. Accepts `NAME` or `NAME=VALUE`. Dependent targets
+    /// inherit the entry.
     Target &define(std::string d) {
         define_list.push_back(std::move(d));
         return *this;
     }
+    /// Append a compile flag. Only this target sees the flag.
     Target &cxxflag(std::string f) {
         cxxflags.push_back(std::move(f));
         return *this;
     }
+    /// Append a link flag. Dependent targets inherit the entry.
     Target &linkflag(std::string f) {
         linkflags.push_back(std::move(f));
         return *this;
     }
+    /**
+     * @brief Add a link dependency.
+     *
+     * Object files of a `Library` dependency join the link line. A
+     * `SharedLibrary` dependency adds `-L`, `-l`, and an rpath entry.
+     * Include directories, defines, and link flags of the dependency are
+     * inherited transitively.
+     */
     Target &link(Target &other) {
         links.push_back(&other);
         return *this;
     }
+    /// Set the output path. A relative path resolves against the workspace
+    /// root. Default: `bin/<name>` or `.cco/bin/<name>` in managed layout.
     Target &output_to(fs::path p) {
         output = std::move(p);
         return *this;
     }
+    /// Set the language standard, for example `c++20`. Default `c++17`.
     Target &standard(std::string s) {
         cppstd = std::move(s);
         return *this;
     }
 };
 
+/// Options for `run_program`.
 struct RunOptions {
+    /// Child working directory. Empty keeps the parent directory.
     fs::path cwd;
+    /// Print the command line before the child starts.
     bool echo = false;
 };
 
+/// @internal Cached stat data for one file, stored in `state.txt`.
 struct FileRecord {
     std::uintmax_t size = 0;
     std::int64_t mtime_ns = 0;
     std::string hash;
 };
 
+/// @internal Cached fingerprint and dependencies of one action.
 struct ActionRecord {
     std::string fingerprint;
     std::vector<std::string> deps;
     std::vector<std::string> outputs;
 };
 
+/// @internal Persistent action cache, stored in `state.txt`.
 struct BuildState {
     int schema = 1;
     std::string toolchain;
     std::map<std::string, FileRecord> files;
     std::map<std::string, ActionRecord> actions;
 
+    /// Load a cache file. Returns false when the file is missing or invalid.
     bool load(const fs::path &path);
+    /// Write the cache atomically. On failure `err` receives a message.
     bool save(const fs::path &path, std::string &err) const;
 };
 
+/// Read the whole file into `out`. Returns false when the file does not
+/// open.
 bool read_file(const fs::path &path, std::string &out);
+/**
+ * @brief Write `content` to `path`.
+ *
+ * Parent directories are created. Content goes to `<path>.tmp` and a rename
+ * publishes the file. On failure `err` receives a message.
+ */
 bool write_file(const fs::path &path, std::string_view content,
                 std::string &err);
 
+/**
+ * @brief Build description. Owns the targets and the incremental engine.
+ *
+ * Minimal `build.cpp`:
+ *
+ *     cco::Workspace ws(argc, argv);
+ *     auto &app = ws.executable("app", {"src/main.cpp"});
+ *     return ws.run();
+ *
+ * Call `cco::glob` to collect many sources. The pattern supports `**`
+ * across directories.
+ */
 struct Workspace {
+    /// Capture `argc`/`argv` and the current directory, and detect a
+    /// toolchain. `run()` detects the toolchain again after `--cxx`.
     Workspace(int argc_, char **argv_);
 
+    /// Create an executable target. The returned reference stays valid until
+    /// the workspace is destroyed.
     Target &executable(std::string name, std::vector<fs::path> sources = {});
+    /// Create an object-group library. Objects link into dependents and no
+    /// archive file is produced.
     Target &library(std::string name, std::vector<fs::path> sources = {});
+    /// Create a shared library. Dependents get `-L`, `-l`, and an rpath
+    /// entry.
     Target &shared_library(std::string name,
                            std::vector<fs::path> sources = {});
+    /// Create a test target. `run test` builds and runs every test target.
     Target &test(std::string name, std::vector<fs::path> sources = {});
+    /**
+     * @brief Parse `argv`, build, and return a process exit code.
+     *
+     * Commands: `build` (default), `run`, `test`, `compdb`, `clean`,
+     * `explain`.
+     *
+     * Options: `--cxx`, `--jobs`, `--verbose`, `--dry-run`, `--explain`,
+     * `--no-color`, `--help`. Arguments after `--` go to the program started
+     * by `run`.
+     *
+     * @return 0 on success, 1 on a build or test failure, 2 on a usage error.
+     */
     int run();
 
-    // Manual mode (default): binaries land in the working directory and
-    // objects in ./obj/. Managed mode: .cco/bin/ and .cco/obj/. The
-    // generated build.cpp opts into managed mode; hand-written build.cpp
-    // keeps full control and may also call set_build_root().
+    /// Put binaries in `.cco/bin/` and objects in `.cco/obj/`. The default
+    /// layout is `bin/` and `obj/`.
     Workspace &managed_layout();
+    /// Put artifacts under `dir` instead of `bin/` and `obj/`.
     Workspace &set_build_root(fs::path dir);
 
     int argc = 0;
     char **argv = nullptr;
     std::deque<Target> targets;
+    /// Toolchain chosen by `run()`. To change the compiler, pass `--cxx` or
+    /// set `$CXX`; a value assigned here is overwritten.
     Toolchain toolchain;
     fs::path root;
     fs::path build_root_path;
+    /// Set by `run()` from `--verbose`.
     bool verbose = false;
+    /// Set by `run()` from `--dry-run`.
     bool dry_run = false;
+    /// Set by `run()` from `--explain`.
     bool explain = false;
+    /// Set by `run()` from `--cxx`.
     std::string cxx_override;
 };
 
+/**
+ * @brief Run a child process without a shell and wait for it.
+ *
+ * @param args Program and arguments. `args[0]` is the executable.
+ * @param opt Working directory and echo flag.
+ * @return Child exit code, or -1 when the child cannot start.
+ */
 int run_program(const std::vector<std::string> &args,
                 const RunOptions &opt = {});
+/**
+ * @brief Rebuild the build script when it is stale, then re-exec it.
+ *
+ * Call through `CCO_GO_REBUILD_URSELF`. The rebuild uses fixed flags
+ * (`c++ -std=c++17 -O2`, or `cl` under MSVC) and restores the previous
+ * binary when the compile fails.
+ *
+ * @param source_path Usually `__FILE__`.
+ * @param header_path Usually `CCO_HEADER_FILE`.
+ */
 void go_rebuild_urself(int argc, char **argv, const char *source_path,
                        const char *header_path);
+/**
+ * @brief Expand a glob pattern relative to the current directory.
+ *
+ * `**` matches across directories; `*` and `?` match inside one component.
+ * `.cco`, `.git`, `.hg`, and `.svn` are skipped. Results are sorted. A
+ * pattern without wildcards returns the file itself, or an empty vector
+ * when the file is missing.
+ */
 std::vector<fs::path> glob(std::string pattern);
 
 } // namespace cco
 
+/// Rebuild this build script when it or `cco.hpp` changed, then re-exec it.
 #define CCO_GO_REBUILD_URSELF(argc, argv)                                      \
     ::cco::go_rebuild_urself((argc), (argv), __FILE__, CCO_HEADER_FILE)
 

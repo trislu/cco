@@ -15,5 +15,7 @@ int main(int argc, char **argv) {
     cco_target_add_include(app, "include");
     cco_target_link(app, greeter);
 
-    return cco_workspace_run(&ws);
+    int rc = cco_workspace_run(&ws);
+    cco_workspace_free(&ws);
+    return rc;
 }

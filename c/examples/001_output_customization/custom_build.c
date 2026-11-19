@@ -8,5 +8,8 @@ int main(int argc, char **argv) {
     Cco_Target *app = cco_executable(&ws, "custom-output");
     cco_target_add_source(app, "src/main.c");
     cco_target_output_to(app, "dist/custom-output");
-    return cco_workspace_run(&ws);
+
+    int rc = cco_workspace_run(&ws);
+    cco_workspace_free(&ws);
+    return rc;
 }

@@ -80,5 +80,6 @@ See [examples/README.md](examples/README.md).
 
 ## Documents
 
+- [API reference](API.md)
 - [Design draft](../docs/design.md)
 - [C++ implementation](../cpp/README.md)

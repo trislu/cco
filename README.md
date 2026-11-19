@@ -22,8 +22,8 @@ Inspired by:
 
 | Language | Header | Seed | Docs |
 | --- | --- | --- | --- |
-| C11 | `c/cco.h` | `c/cco.c` | [c/README.md](c/README.md) |
-| C++17 | `cpp/cco.hpp` | `cpp/cco.cpp` | [cpp/README.md](cpp/README.md) |
+| C11 | `c/cco.h` | `c/cco.c` | [c/README.md](c/README.md) · [API](c/API.md) |
+| C++17 | `cpp/cco.hpp` | `cpp/cco.cpp` | [cpp/README.md](cpp/README.md) · [API](cpp/API.md) |
 
 Copy the appropriate single header into a project, or use the scaffold:
 

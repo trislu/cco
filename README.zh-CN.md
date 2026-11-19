@@ -21,8 +21,8 @@
 
 | 语言 | 头文件 | seed | 文档 |
 | --- | --- | --- | --- |
-| C11 | `c/cco.h` | `c/cco.c` | [c/README.md](c/README.md) |
-| C++17 | `cpp/cco.hpp` | `cpp/cco.cpp` | [cpp/README.md](cpp/README.md) |
+| C11 | `c/cco.h` | `c/cco.c` | [c/README.md](c/README.md) · [API 参考](c/API.md) |
+| C++17 | `cpp/cco.hpp` | `cpp/cco.cpp` | [cpp/README.md](cpp/README.md) · [API 参考](cpp/API.md) |
 
 把对应的单头文件拷进工程，或使用 scaffold：
 

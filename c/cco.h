@@ -40,86 +40,217 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/** Version string reported by this header. */
 #define CCO_VERSION "0.2.0"
 
+/**
+ * @brief Growable array of strings.
+ *
+ * Origin decides ownership. `cco_glob` returns an array owned by the
+ * caller; release it with `cco_str_array_free`. Arrays inside a `Cco_Target`
+ * belong to the workspace and are released by `cco_workspace_free`. Read
+ * `items` and `count` to loop over the entries.
+ */
 typedef struct {
     char **items;
     size_t count;
     size_t capacity;
 } Cco_Str_Array;
 
+/** One build product. The struct is public; configuration goes through
+ *  `cco_target_*`. */
 typedef struct Cco_Target Cco_Target;
 
+/** Growable array of target pointers. */
 typedef struct {
     Cco_Target **items;
     size_t count;
     size_t capacity;
 } Cco_Target_Array;
 
+/** Product kind. */
 typedef enum {
     CCO_EXECUTABLE,
+    /** Object group: objects join the link line of dependents, and no
+     *  archive file is produced. */
     CCO_LIBRARY,
+    /** Adds `-L`, `-l`, and an rpath entry to dependent targets. */
     CCO_SHARED_LIBRARY,
+    /** Built and run by `run test`. A non-zero exit fails the command. */
     CCO_TEST
 } Cco_Target_Kind;
 
+/**
+ * @brief One build product.
+ *
+ * Create targets with `cco_executable` and friends, then configure them with
+ * the `cco_target_*` functions. Every string is copied; the caller keeps
+ * ownership of the argument.
+ */
 struct Cco_Target {
+    /** Target name. Also the default output file name. */
     char *name;
     Cco_Target_Kind kind;
+    /** Sources to compile. Relative paths resolve against the workspace
+     *  root. */
     Cco_Str_Array sources;
+    /** Include directories, inherited by dependent targets. */
     Cco_Str_Array includes;
+    /** Preprocessor defines, inherited by dependent targets. */
     Cco_Str_Array defines;
+    /** Compile flags for this target only. Never inherited. */
     Cco_Str_Array cflags;
+    /** Link flags, inherited by dependent targets. */
     Cco_Str_Array linkflags;
+    /** Targets this target links against. */
     Cco_Target_Array links;
+    /** Explicit output path, or NULL for the default layout. */
     char *output;
+    /** Standard passed to the compiler. Default `c11`. */
     char *standard;
 };
 
+/**
+ * @brief Build description. Owns the targets and the incremental engine.
+ *
+ *     Cco_Workspace ws;
+ *     cco_workspace_init(&ws, argc, argv);
+ *     Cco_Target *app = cco_executable(&ws, "app");
+ *     cco_target_add_source(app, "src/main.c");
+ *     int rc = cco_workspace_run(&ws);
+ *     cco_workspace_free(&ws);
+ *     return rc;
+ *
+ * Every `cco_target_add_*` call copies its string argument. The workspace
+ * owns the copies and releases them in `cco_workspace_free`.
+ */
 typedef struct {
     int argc;
     char **argv;
+    /** Targets created by `cco_executable` and friends. */
     Cco_Target_Array targets;
+    /** Absolute workspace root, captured at init. */
     char *root;
+    /** Custom build root, or NULL for the default layout. */
     char *build_root;
+    /** Compiler driver in use. */
     char *cc;
+    /** 1 when the driver uses MSVC-style flags. */
     int msvc;
+    /** Set by `cco_workspace_run` from `--verbose`. */
     bool verbose;
+    /** Set by `cco_workspace_run` from `--dry-run`. */
     bool dry_run;
+    /** Set by `cco_workspace_run` from `--explain`. */
     bool explain;
+    /** Set by `cco_workspace_run` from `--cxx`. */
     char *cc_override;
 } Cco_Workspace;
 
+/**
+ * @brief Initialize a workspace.
+ *
+ * Copies `argc`/`argv`, captures the current directory, and detects a
+ * compiler. Pair the call with `cco_workspace_free`.
+ */
 void cco_workspace_init(Cco_Workspace *ws, int argc, char **argv);
+/** Release every target and every string owned by the workspace. */
 void cco_workspace_free(Cco_Workspace *ws);
+/** Put binaries in `.cco/bin/` and objects in `.cco/obj/`. */
 void cco_workspace_managed_layout(Cco_Workspace *ws);
+/** Put artifacts under `dir` instead of `bin/` and `obj/`. */
 void cco_workspace_set_build_root(Cco_Workspace *ws, const char *dir);
+/**
+ * @brief Parse `argv`, build, and return a process exit code.
+ *
+ * Commands: `build` (default), `run`, `test`, `compdb`, `clean`,
+ * `explain`. Options: `--cxx`, `--jobs`, `--verbose`, `--dry-run`,
+ * `--explain`, `--no-color`, `--help`.
+ *
+ * @return 0 on success, 1 on a build or test failure, 2 on a usage error.
+ */
 int cco_workspace_run(Cco_Workspace *ws);
 
+/** Create an executable target. The pointer stays valid until
+ *  `cco_workspace_free`. */
 Cco_Target *cco_executable(Cco_Workspace *ws, const char *name);
+/** Create an object-group library. Objects link into dependents and no
+ *  archive file is produced. */
 Cco_Target *cco_library(Cco_Workspace *ws, const char *name);
+/** Create a shared library. Dependents get `-L`, `-l`, and an rpath
+ *  entry. */
 Cco_Target *cco_shared_library(Cco_Workspace *ws, const char *name);
+/** Create a test target. `run test` builds and runs every test target. */
 Cco_Target *cco_test(Cco_Workspace *ws, const char *name);
 
+/** Append one source file. The path is copied. */
 void cco_target_add_source(Cco_Target *t, const char *path);
+/** Append an include directory. Dependent targets inherit the entry. */
 void cco_target_add_include(Cco_Target *t, const char *dir);
+/** Append a define. Accepts `NAME` or `NAME=VALUE`. Dependent targets
+ *  inherit the entry. */
 void cco_target_add_define(Cco_Target *t, const char *define);
+/** Append a compile flag. Only this target sees the flag. */
 void cco_target_add_cflag(Cco_Target *t, const char *flag);
+/** Append a link flag. Dependent targets inherit the entry. */
 void cco_target_add_linkflag(Cco_Target *t, const char *flag);
+/**
+ * @brief Add a link dependency.
+ *
+ * Object files of a `CCO_LIBRARY` dependency join the link line. A
+ * `CCO_SHARED_LIBRARY` dependency adds `-L`, `-l`, and an rpath entry.
+ * Include directories, defines, and link flags of the dependency are
+ * inherited transitively.
+ */
 void cco_target_link(Cco_Target *t, Cco_Target *dep);
+/** Set the output path. A relative path resolves against the workspace
+ *  root. */
 void cco_target_output_to(Cco_Target *t, const char *path);
+/** Set the language standard, for example `c11`. Default `c11`. */
 void cco_target_standard(Cco_Target *t, const char *standard);
 
+/**
+ * @brief Expand a glob pattern relative to the current directory.
+ *
+ * `**` matches across directories; `*` and `?` match inside one component.
+ * `.cco`, `.git`, `.hg`, and `.svn` are skipped. Results are sorted.
+ *
+ * The caller owns the result. Release it with `cco_str_array_free` after the
+ * entries have been consumed.
+ */
 Cco_Str_Array cco_glob(const char *pattern);
 
+/**
+ * @brief Release an array returned by `cco_glob`.
+ *
+ * Free each string and the backing store, then zero the array. A second
+ * call is safe. Do not pass workspace-owned arrays here;
+ * `cco_workspace_free` releases those.
+ */
+void cco_str_array_free(Cco_Str_Array *a);
+
+/** Path of the `cco.h` included by this build script. The self-rebuild
+ *  check compares the binary timestamp against this file. */
 const char *cco_header_file_path(void);
+/**
+ * @brief Rebuild the build script when it is stale, then re-exec it.
+ *
+ * Call through `CCO_GO_REBUILD_URSELF`. The rebuild uses fixed flags
+ * (`cc -std=c11 -O2`, or `cl` under MSVC) and restores the previous binary
+ * when the compile fails.
+ *
+ * @param source_path Usually `__FILE__`.
+ * @param header_path Usually `CCO_HEADER_FILE`.
+ */
 int cco_go_rebuild_urself(int argc, char **argv, const char *source_path,
                           const char *header_path);
 
+/// Path of the `cco.h` included by this build script.
 #ifndef CCO_HEADER_FILE
 #define CCO_HEADER_FILE cco_header_file_path()
 #endif
 
+/// Rebuild this build script when it or `cco.h` changed, then re-exec it.
 #define CCO_GO_REBUILD_URSELF(argc, argv)                                      \
     cco_go_rebuild_urself((argc), (argv), __FILE__, CCO_HEADER_FILE)
 
@@ -221,7 +352,9 @@ static bool cco_str_array_contains(const Cco_Str_Array *a, const char *value) {
     return false;
 }
 
-static void cco_str_array_free(Cco_Str_Array *a) {
+void cco_str_array_free(Cco_Str_Array *a) {
+    if (!a)
+        return;
     for (size_t i = 0; i < a->count; ++i)
         free(a->items[i]);
     free(a->items);
