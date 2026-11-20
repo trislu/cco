@@ -1,0 +1,111 @@
+.TH CCO 1 "2026-11-20" "cco 0.2.0" "User Commands"
+.SH NAME
+cco \- scaffold C projects that build with the cco build runtime
+.SH SYNOPSIS
+.B cco
+.B new
+.I path
+.RI [ options ]
+.br
+.B cco
+.B init
+.RI [ path ]
+.RI [ options ]
+.SH DESCRIPTION
+.B cco
+is the C11 counterpart of
+.BR cco++ (1).
+It generates a project whose build description is the build tool: a
+.B build.c
+that includes the single header
+.B cco.h
+and drives compilation, linking, tests and
+.B compile_commands.json
+generation itself.
+.PP
+The scaffold writes
+.BR build.c ,
+.BR cco.h ,
+.BR README.md ,
+.BR compile_flags.txt ,
+.B .gitignore
+and either
+.B src/main.c
+or, with
+.BR \-\-lib ,
+a library layout with
+.BR include/ ,
+.B src/
+and
+.BR tests/ .
+.PP
+The generated
+.B build
+program has its own command line: run
+.B ./build \-\-help
+for its subcommands and options. The build API it exposes is documented in
+.I c/API.md
+in the cco source tree.
+.PP
+Invoking
+.B cco
+with no arguments or with unknown options prints its usage summary.
+.SH OPTIONS
+.TP
+.B \-\-bin
+Generate an executable project. This is the default.
+.TP
+.B \-\-lib
+Generate a library project, with a test target linked against it.
+.TP
+.BI \-\-name " name"
+Target name. Defaults to the directory name.
+.TP
+.B \-\-build
+Compile
+.B build.c
+and run it once after scaffolding.
+.TP
+.B \-\-force
+Overwrite scaffold files that already exist. Files under
+.BR src/ ,
+.B include/
+and
+.B tests/
+are not touched.
+.TP
+.B \-\-quiet
+Suppress per-file output and the suggested next steps.
+.TP
+.BI \-\-cco-header " path"
+Header to vendor. Use it when
+.B cco.h
+does not sit next to the
+.B cco
+executable or under
+.BR ../include/cco/ .
+.SH FILES
+.TP
+.B build.c
+Generated build description. It is the build tool; there is no Makefile.
+.TP
+.B cco.h
+Runtime header written into the project root, copied from the installation
+the scaffold found.
+.SH ENVIRONMENT
+.TP
+.B CC
+Compiler driver used by generated builds when
+.B \-\-cc
+is not given.
+.SH SEE ALSO
+.BR cco++ (1),
+.BR cc (1)
+.PP
+The API used by a generated
+.B build.c
+is documented in
+.I c/API.md
+in the cco source tree.
+.SH AUTHOR
+room2 <lukai@mail.ustc.edu.cn>

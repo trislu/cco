@@ -45,15 +45,17 @@ language READMEs for installation, artifacts, examples, limits, and roadmap.
 ```text
 c/       C11 implementation + examples
 cpp/     C++17 implementation + examples
+docs/    design notes and the cco(1) / cco++(1) man pages
 tools/   reserved for future cco_from_* import helpers
-docs/    design
 ```
 
 ## Documents
 
-- [C11 implementation](c/README.md)
-- [C++17 implementation](cpp/README.md)
+- [C11 implementation](c/README.md) · [API](c/API.md)
+- [C++17 implementation](cpp/README.md) · [API](cpp/API.md)
 - [Design draft](docs/design.md)
+- Reference pages: `docs/man/cco.1` and `docs/man/cco++.1`, readable with
+  `man -l docs/man/cco++.1`
 
 ## License
 

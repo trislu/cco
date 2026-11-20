@@ -1,0 +1,122 @@
+.TH CCO++ 1 "2026-11-20" "cco 0.2.0" "User Commands"
+.SH NAME
+cco++ \- scaffold C++ projects that build with the cco build runtime
+.SH SYNOPSIS
+.B cco++
+.B new
+.I path
+.RI [ options ]
+.br
+.B cco++
+.B init
+.RI [ path ]
+.RI [ options ]
+.SH DESCRIPTION
+.B cco++
+generates a project whose build description is the build tool: a
+.B build.cpp
+that includes the single header
+.B cco.hpp
+and drives compilation, linking, tests and
+.B compile_commands.json
+generation itself.
+.PP
+The scaffold writes
+.BR build.cpp ,
+.BR cco.hpp ,
+.BR README.md ,
+.BR compile_flags.txt ,
+.B .gitignore
+and either
+.B src/main.cpp
+or, with
+.BR \-\-lib ,
+a library layout with
+.BR include/ ,
+.B src/
+and
+.BR tests/ .
+.PP
+The generated
+.B build
+program has its own command line: run
+.B ./build \-\-help
+for its subcommands and options. The build API it exposes is documented in
+.I cpp/API.md
+in the cco source tree.
+.SH OPTIONS
+.TP
+.B \-\-bin
+Generate an executable project. This is the default.
+.TP
+.B \-\-lib
+Generate a library project, with a test target linked against it.
+.TP
+.BI \-\-name " name"
+Target name. Defaults to the directory name.
+.TP
+.BI \-\-vcs " none|git"
+Initialize a Git repository. Defaults to
+.BR none .
+.TP
+.B \-\-ide
+Write
+.B .bsp/compiler-only.json
+for Build Server Protocol clients.
+.TP
+.B \-\-build
+Compile
+.B build.cpp
+and run it once after scaffolding.
+.TP
+.B \-\-dry-run
+Print the planned files without writing them.
+.TP
+.B \-\-force
+Overwrite scaffold files that already exist with different content. Files
+under
+.BR src/ ,
+.B include/
+and
+.B tests/
+are never overwritten.
+.TP
+.B \-\-quiet
+Suppress per-file output and the suggested next steps.
+.TP
+.BI \-\-cco-header " path"
+Header to vendor. Use it when
+.B cco.hpp
+does not sit next to the
+.B cco++
+executable or under
+.BR ../include/cco/ .
+.SH FILES
+.TP
+.B build.cpp
+Generated build description. It is the build tool; there is no Makefile.
+.TP
+.B cco.hpp
+Runtime header written into the project root, copied from the installation
+the scaffold found.
+.SH ENVIRONMENT
+.TP
+.B CXX
+Compiler driver used by generated builds when
+.B \-\-cxx
+is not given.
+.SH SEE ALSO
+.BR cco (1),
+.BR c++ (1)
+.PP
+The API used by a generated
+.B build.cpp
+.RB ( cco::Workspace ,
+.BR cco::Target ,
+.BR cco::glob ,
+.BR cco::run_program )
+is documented in
+.I cpp/API.md
+in the cco source tree.
+.SH AUTHOR
+room2 <lukai@mail.ustc.edu.cn>
