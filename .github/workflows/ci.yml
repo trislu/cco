@@ -185,3 +185,25 @@ jobs:
           cd app
           c++ -std=c++17 build.cpp -o build
           ./build run app
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: man pages render without warnings
+        run: |
+          set -e
+          if ! command -v man >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends man-db
+          fi
+          for page in docs/man/*.1; do
+            log=$(mktemp)
+            man --warnings -l "$page" >/dev/null 2>"$log"
+            if [ -s "$log" ]; then
+              echo "$page: man --warnings reported:"
+              cat "$log"
+              exit 1
+            fi
+            echo "ok $page"
+          done
